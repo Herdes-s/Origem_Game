@@ -1,0 +1,99 @@
+@import "../../styles/variables";
+
+.control_game {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .control_base {
+    width: 90%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .control_top {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .control_btn {
+        width: 3rem;
+        height: 3rem;
+        background: $bg-primary-color;
+        padding: 0.25rem;
+        color: #fff;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+
+        &:active {
+          transform: scale(1.05);
+        }
+      }
+    }
+    .control_mid {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .control_btn {
+        width: 3rem;
+        height: 3rem;
+        background: $bg-primary-color;
+        padding: 0.25rem;
+        color: #fff;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+
+        &:active {
+          transform: scale(1.05);
+        }
+      }
+    }
+    .control_down {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .control_btn {
+        width: 3rem;
+        height: 3rem;
+        background: $bg-primary-color;
+        padding: 0.25rem;
+        color: #fff;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+
+        &:active {
+          transform: scale(1.05);
+        }
+      }
+    }
+  }
+
+  .control_jump {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .control_btn {
+      width: 5rem;
+      height: 3rem;
+      background: $bg-primary-color;
+      padding: 0.25rem;
+      color: #fff;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+
+      &:active {
+        transform: scale(1.05);
+      }
+    }
+  }
+}

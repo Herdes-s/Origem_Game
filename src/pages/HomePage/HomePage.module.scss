@@ -1,0 +1,106 @@
+@import "../../styles/variables";
+
+.home_page {
+  background: radial-gradient(circle, $bg-secondary-color, $bg-primary-color);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+
+  .title {
+    font-size: 4rem;
+    font-family: $font-main;
+    margin-bottom: 1rem;
+
+    background: radial-gradient(
+      circle,
+      $secondary-detail-color,
+      $primary-detail-color
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: inline-block;
+    animation: colorInfinit 2.5s infinite ease-in-out;
+
+    @keyframes colorInfinit {
+      0% {
+        background: radial-gradient(
+          circle,
+          $secondary-detail-color,
+          $primary-detail-color
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+      }
+      50% {
+        background: radial-gradient(
+          circle,
+          $primary-detail-color,
+          $secondary-detail-color
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: inline-block;
+      }
+    }
+  }
+
+  .sub_title {
+    font-size: 1.25rem;
+    font-family: $font-secondary;
+    font-weight: 500;
+    color: #5a7a99;
+    letter-spacing: 3px;
+
+    margin-bottom: 2rem;
+  }
+
+  .btn {
+    font-size: 1.5rem;
+    font-family: $font-secondary;
+    padding: 0.5rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: $primary-detail-color;
+    background: linear-gradient(
+      to right,
+      rgba(0, 217, 255, 0.2),
+      rgba(191, 0, 255, 0.2)
+    );
+    border-block: 2px solid #00d9ff;
+    border-inline: none;
+
+    animation: bgInfinit 2.5s infinite ease-in-out;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+
+    @keyframes bgInfinit {
+      0% {
+        background: linear-gradient(
+      to right,
+      rgba(0, 217, 255, 0.2),
+      rgba(191, 0, 255, 0.2)
+    );
+      }
+      50% {
+        background: linear-gradient(
+      to left,
+      rgba(0, 217, 255, 0.2),
+      rgba(191, 0, 255, 0.2)
+    );
+      }
+    }
+
+    &:hover {
+      transform: scale(1.05) translateY(-2px);
+    }
+  }
+}
