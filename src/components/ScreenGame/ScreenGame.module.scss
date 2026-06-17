@@ -7,6 +7,7 @@
   justify-content: center;
 
   .screen_base {
+    position: relative;
     background: rgb(48, 48, 48);
     border: $bg-primary-color solid 2px;
     width: 90%;
@@ -16,8 +17,10 @@
     justify-content: center;
 
     .face {
+      position: absolute;
         font-size: 3rem;
         color: $primary-detail-color;
+        transition: all 1s ease;
     }
   }
 
