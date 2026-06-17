@@ -10,6 +10,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1rem;
 
     .control_top {
       width: 100%;
@@ -18,8 +19,8 @@
       justify-content: center;
 
       .control_btn {
-        width: 3rem;
-        height: 3rem;
+        width: 4rem;
+        height: 4rem;
         background: $bg-primary-color;
         padding: 0.25rem;
         color: #fff;
@@ -39,8 +40,8 @@
       justify-content: center;
 
       .control_btn {
-        width: 3rem;
-        height: 3rem;
+        width: 4rem;
+        height: 4rem;
         background: $bg-primary-color;
         padding: 0.25rem;
         color: #fff;
@@ -60,8 +61,8 @@
       justify-content: center;
 
       .control_btn {
-        width: 3rem;
-        height: 3rem;
+        width: 4rem;
+        height: 4rem;
         background: $bg-primary-color;
         padding: 0.25rem;
         color: #fff;
@@ -83,7 +84,7 @@
 
     .control_btn {
       width: 5rem;
-      height: 3rem;
+      height: 4rem;
       background: $bg-primary-color;
       padding: 0.25rem;
       color: #fff;

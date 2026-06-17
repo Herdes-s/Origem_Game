@@ -1,5 +1,4 @@
 import {
-  FaAngleDoubleUp,
   FaArrowDown,
   FaArrowLeft,
   FaArrowRight,
@@ -10,6 +9,7 @@ import { FaArrowsSpin } from "react-icons/fa6";
 import styles from "./ControlGame.module.scss";
 
 import type { Direction } from "../../types/game";
+import { GiPunch } from "react-icons/gi";
 
 type Props = { onMove: (dir: Direction) => void }
 
@@ -31,7 +31,7 @@ function ControlGame({onMove}: Props) {
           </div>
         </div>
         <div className={styles.control_jump}>
-          <FaAngleDoubleUp className={styles.control_btn}/>
+          <GiPunch className={styles.control_btn}/>
         </div>
       </div>
     </section>

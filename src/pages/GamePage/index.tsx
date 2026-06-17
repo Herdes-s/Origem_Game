@@ -5,18 +5,29 @@ import ScreenGame from "../../components/ScreenGame";
 import type { Direction, Position } from "../../types/game";
 
 function GamePage() {
-  const [pos, setPos] = useState<Position>({x: 100, y: 100});
+  const [pos, setPos] = useState<Position>({ x: 100, y: 100 });
   const speed = 100;
 
   const move = (dir: Direction) => {
-    setPos(prev => ({
-      x: dir === "right" ? prev.x + speed : dir === "left" ? prev.x - speed : prev.x,
-      y: dir === "down" ? prev.y + speed : dir === "up" ? prev.y - speed : prev.y,
+    setPos((prev) => ({
+      x:
+        dir === "right"
+          ? prev.x + speed
+          : dir === "left"
+            ? prev.x - speed
+            : prev.x,
+      y:
+        dir === "down"
+          ? prev.y + speed
+          : dir === "up"
+            ? prev.y - speed
+            : prev.y,
     }));
   };
   return (
     <>
-      <ScreenGame pos={pos}/>
+      <h1 style={{color: "#fff", textAlign: "center", marginTop: "1rem"}}>Origem</h1>
+      <ScreenGame pos={pos} />
       <ControlGame onMove={move} />
     </>
   );
