@@ -1,27 +1,27 @@
 @import "../../styles/variables";
 
 .screen_game {
-  height: 400px;
   display: flex;
-  align-items: center;
   justify-content: center;
+  padding: 1rem;
 
   .screen_base {
     position: relative;
-    background: rgb(48, 48, 48);
+    background:  #0f172a;
     border: $bg-primary-color solid 2px;
-    width: 90%;
-    height: 90%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 8px;
+    overflow: hidden;
 
     .face {
       position: absolute;
-        font-size: 3rem;
-        color: $primary-detail-color;
-        transition: all 1s ease;
+      top: 0;
+      left: 0;
+      width: 32px;
+      height: 32px;
+      color: #fde68a;
+      margin-left: -16px;
+      margin-top: -16px;
+      will-change: transform;
     }
   }
-
 }

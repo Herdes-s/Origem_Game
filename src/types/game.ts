@@ -1,5 +1,10 @@
-
-
 export type Direction = "up" | "down" | "left" | "right";
-
-export type Position = { x: number; y: number };
+ 
+export type Position = {
+  x: number;
+  y: number;
+};
+ 
+export type GameKeys = {
+  [key: string]: boolean;
+};

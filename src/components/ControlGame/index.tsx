@@ -1,40 +1,40 @@
-import {
-  FaArrowDown,
-  FaArrowLeft,
-  FaArrowRight,
-  FaArrowUp,
-} from "react-icons/fa";
-import { FaArrowsSpin } from "react-icons/fa6";
-
 import styles from "./ControlGame.module.scss";
 
-import type { Direction } from "../../types/game";
-import { GiPunch } from "react-icons/gi";
+import type { GameKeys } from "../../types/game";
+import type { RefObject } from "react";
 
-type Props = { onMove: (dir: Direction) => void }
+type Props = { keysRef: RefObject<GameKeys> };
 
-function ControlGame({onMove}: Props) {
+const BUTTONS: { label: string; key: string }[] = [
+  { label: "▲", key: "ArrowUp" },
+  { label: "◀", key: "ArrowLeft" },
+  { label: "▼", key: "ArrowDown" },
+  { label: "▶", key: "ArrowRight" },
+];
+
+function ControlGame({ keysRef }: Props) {
+  const handlePress = (key: string) => {
+    keysRef.current[key] = true;
+  };
+
+  const handleRelease = (key: string) => {
+    keysRef.current[key] = false;
+  };
+
   return (
-    <section className={styles.control_game}>
-      <div className={styles.control_base}>
-        <div className={styles.contro_move}>
-          <div className={styles.control_top}>
-            <FaArrowUp className={styles.control_btn} onClick={() => onMove("up")} />
-          </div>
-          <div className={styles.control_mid}>
-            <FaArrowLeft className={styles.control_btn} onClick={() => onMove("left")}/>
-            <FaArrowsSpin className={styles.control_btn} />
-            <FaArrowRight className={styles.control_btn} onClick={() => onMove("right")}/>
-          </div>
-          <div className={styles.control_down}>
-            <FaArrowDown className={styles.control_btn} onClick={() => onMove("down")} />
-          </div>
-        </div>
-        <div className={styles.control_jump}>
-          <GiPunch className={styles.control_btn}/>
-        </div>
+      <div className={styles.controls}>
+        {BUTTONS.map(({ label, key }) => (
+          <button
+            key={key}
+            className={styles.btn}
+            onPointerDown={() => handlePress(key)}
+            onPointerUp={() => handleRelease(key)}
+            onPointerLeave={() => handleRelease(key)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
-    </section>
   );
 }
 
