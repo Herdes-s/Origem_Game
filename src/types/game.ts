@@ -8,3 +8,7 @@ export type Position = {
 export type GameKeys = {
   [key: string]: boolean;
 };
+
+export type TileType = 0 | 1;
+
+export type TileMap = TileType[][];

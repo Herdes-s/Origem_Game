@@ -3,13 +3,16 @@ import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
 
 import type { GameKeys } from "../../types/game";
+import { MAP_H, MAP_W } from "../../data/map";
+import { wouldCollide } from "../../utils/cillision";
 
-const SCREEN_W = window.innerWidth * 0.9;
-const SCREEN_H = 400;
 const SPEED = 3;
 
+const START_X = MAP_W / 2;
+const START_Y = MAP_H / 2;
+
 function GamePage() {
-  const posRef = useRef({ x: SCREEN_W / 2, y: SCREEN_H / 2 });
+  const posRef = useRef({ x: START_X, y: START_Y });
 
   const keysRef = useRef<GameKeys>({});
 
@@ -45,8 +48,16 @@ function GamePage() {
         dy = dy / len;
       }
 
-      pos.x = Math.max(0, Math.min(SCREEN_W, pos.x + dx * SPEED));
-      pos.y = Math.max(0, Math.min(SCREEN_H, pos.y + dy * SPEED));
+      const nextX = pos.x + dx * SPEED;
+      const nextY = pos.y + dy * SPEED;
+
+      if (!wouldCollide(nextX, pos.y)) {
+        pos.x = nextX
+      }
+
+      if (!wouldCollide(pos.x, nextY)) {
+        pos.y = nextY
+      }
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -62,7 +73,7 @@ function GamePage() {
 
   return (
     <>
-      <ScreenGame posRef={posRef} width={SCREEN_W} height={SCREEN_H} />
+      <ScreenGame posRef={posRef} />
       <ControlGame keysRef={keysRef} />
     </>
   );

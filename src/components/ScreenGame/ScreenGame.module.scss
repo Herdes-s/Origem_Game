@@ -3,25 +3,16 @@
 .screen_game {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 1rem;
+}
+ 
+.canvas {
+  max-width: 90vw;
+  height: auto;
+ 
+  border: 2px solid #334155;
+  border-radius: 8px;
 
-  .screen_base {
-    position: relative;
-    background:  #0f172a;
-    border: $bg-primary-color solid 2px;
-    border-radius: 8px;
-    overflow: hidden;
-
-    .face {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 32px;
-      height: 32px;
-      color: #fde68a;
-      margin-left: -16px;
-      margin-top: -16px;
-      will-change: transform;
-    }
-  }
+  image-rendering: pixelated;
 }
