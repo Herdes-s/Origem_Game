@@ -3,13 +3,13 @@ import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
 
 import type { GameKeys } from "../../types/game";
-import { MAP_H, MAP_W } from "../../data/map";
+import { MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
 import { wouldCollide } from "../../utils/cillision";
 
 const SPEED = 3;
 
-const START_X = MAP_W / 2;
-const START_Y = MAP_H / 2;
+const START_X = Math.floor((MAP_W / 2) / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
+const START_Y = Math.floor((MAP_H / 2) / TILE_SIZE) * TILE_SIZE + TILE_SIZE / 2;
 
 function GamePage() {
   const posRef = useRef({ x: START_X, y: START_Y });
@@ -20,6 +20,11 @@ function GamePage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault()
+      }
+
       keysRef.current[e.key] = true;
     };
 
@@ -42,6 +47,7 @@ function GamePage() {
       if (keys["ArrowLeft"] || keys["a"]) dx -= 1;
       if (keys["ArrowRight"] || keys["d"]) dx += 1;
 
+      // Normalização diagonal
       if (dx !== 0 && dy !== 0) {
         const len = Math.sqrt(dx * dx + dy * dy);
         dx = dx / len;
@@ -51,6 +57,7 @@ function GamePage() {
       const nextX = pos.x + dx * SPEED;
       const nextY = pos.y + dy * SPEED;
 
+      // Colisão com separação de eixos (deslizamento)
       if (!wouldCollide(nextX, pos.y)) {
         pos.x = nextX
       }
