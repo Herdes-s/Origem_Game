@@ -31,7 +31,7 @@ export const MAP_W = MAP[0].length * TILE_SIZE;
 export const MAP_H = MAP.length * TILE_SIZE;
 
 export const SCREEN_W = 480;
-export const SCREEN_H = 352;
+export const SCREEN_H = 500;
 
 export const TILE_COLORS: Record<number, string> = {
   0: "#1e293b",

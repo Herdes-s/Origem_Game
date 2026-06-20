@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
-
 import type { GameKeys } from "../../types/game";
 import { MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
 import { wouldCollide } from "../../utils/cillision";
@@ -80,7 +79,7 @@ function GamePage() {
 
   return (
     <>
-      <ScreenGame posRef={posRef} />
+      <ScreenGame posRef={posRef} keysRef={keysRef} />
       <ControlGame keysRef={keysRef} />
     </>
   );

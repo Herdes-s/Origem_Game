@@ -15,4 +15,8 @@
   border-radius: 8px;
 
   image-rendering: pixelated;
+
+  @media(max-width: 768px) {
+    
+  }
 }
