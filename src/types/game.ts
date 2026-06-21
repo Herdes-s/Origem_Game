@@ -12,3 +12,9 @@ export type GameKeys = {
 export type TileType = 0 | 1;
 
 export type TileMap = TileType[][];
+
+export type HudState = {
+  hp: number;
+  hpMax: number;
+  score: number;
+}

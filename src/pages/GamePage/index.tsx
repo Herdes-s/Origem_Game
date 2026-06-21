@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
-import type { GameKeys } from "../../types/game";
+import type { GameKeys, HudState } from "../../types/game";
 import { MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
 import { wouldCollide } from "../../utils/cillision";
 
@@ -16,6 +16,12 @@ function GamePage() {
   const keysRef = useRef<GameKeys>({});
 
   const rafRef = useRef<number>(0);
+
+  const hudRef = useRef<HudState>({
+    hp: 100,
+    hpMax: 100,
+    score: 0,
+  }) 
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,7 +85,7 @@ function GamePage() {
 
   return (
     <>
-      <ScreenGame posRef={posRef} keysRef={keysRef} />
+      <ScreenGame posRef={posRef} keysRef={keysRef} hudRef={hudRef} />
       <ControlGame keysRef={keysRef} />
     </>
   );

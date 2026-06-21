@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import type { GameKeys, Position } from "../../types/game";
+import type { GameKeys, Position, HudState } from "../../types/game";
 import styles from "./ScreenGame.module.scss";
 import {
   MAP,
@@ -11,6 +11,7 @@ import {
   TILE_SIZE,
 } from "../../data/map";
 
+// SPRITE
 const FRAME_W = 64;
 const FRAME_H = 64;
 const FRAME_COUNT = 4;
@@ -23,12 +24,45 @@ const DIRECTION_ROW: Record<string, number> = {
   right: 3,
 };
 
+//HUB
+const HUB_X = 12;
+const HUB_Y = 12;
+const BAR_W = 140;
+const BAR_H = 14;
+const BAR_RADIUS = 4;
+
+function getHpColor(percent: number): string {
+  if (percent > 0.6) return "#22c55e";
+  if (percent > 0.3) return "#eab308";
+  return "#ef4444";       
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  w: number, h: number,
+  r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x,     y + h, x,     y + h - r, r);
+  ctx.lineTo(x,     y + r);
+  ctx.arcTo(x,     y,     x + r, y,         r);
+  ctx.closePath();
+}
+
 type Props = {
   posRef: React.RefObject<Position>;
   keysRef: React.RefObject<GameKeys>;
+  hudRef: React.RefObject<HudState>;
 };
 
-function ScreenGame({ posRef, keysRef }: Props) {
+function ScreenGame({ posRef, keysRef, hudRef }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
@@ -57,7 +91,9 @@ function ScreenGame({ posRef, keysRef }: Props) {
     const loop = () => {
       const pos = posRef.current;
       const keys = keysRef.current;
+      const hud = hudRef.current;
 
+      // DIREÇÂO E ANIMAÇÂO
       let moving = false;
 
       if (keys["ArrowDown"] || keys["s"]) {
@@ -109,7 +145,7 @@ function ScreenGame({ posRef, keysRef }: Props) {
       // LIMPA O FRAME
       ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
 
-      // DESENHA O MAPA
+      // 1 MAPA
       MAP.forEach((row, rowIndex) => {
         row.forEach((tile, colIndex) => {
           const worldX = colIndex * TILE_SIZE;
@@ -135,7 +171,7 @@ function ScreenGame({ posRef, keysRef }: Props) {
         });
       });
 
-      // DESENHA O PERSONAGEM
+      // 2 PERSONAGEM
       const screenX = pos.x - camX;
       const screenY = pos.y - camY;
       
@@ -162,12 +198,50 @@ function ScreenGame({ posRef, keysRef }: Props) {
         ctx.fillRect(screenX - 10, screenY - 10, 20, 20);
       }
 
+      // 3 HUB
+      const { hp, hpMax} = hud;
+
+      const percent = Math.max(0, Math.min(1, hp / hpMax));
+      const hpColor = getHpColor(percent);
+
+      ctx.font = "bold 11px monospace";
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillText("HP", HUB_X, HUB_Y + 10);
+
+      const barX = HUB_X + 22;
+      const barY = HUB_Y;
+
+      ctx.fillStyle = "#1e293b";
+      roundRect(ctx, barX, barY, BAR_W, BAR_H, BAR_RADIUS);
+      ctx.fill();
+
+      if (percent > 0) {
+        ctx.fillStyle = hpColor;
+
+        const fillendW = Math.max(1, percent * BAR_W);
+        roundRect(ctx, barX, barY, fillendW, BAR_H, BAR_RADIUS);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = "rgba(225,225,225,0.15)";
+      roundRect(ctx, barX + 2, barY + 2, BAR_W - 4, BAR_H / 3, BAR_RADIUS - 1);
+      ctx.fill();
+
+      ctx.strokeStyle = "#475569";
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, barX, barY, BAR_W, BAR_H, BAR_RADIUS);
+      ctx.stroke();
+
+      ctx.font = "10px monospace";
+      ctx.fillStyle = "#94a3b8";
+      ctx.fillText(`${hp} / ${hpMax}`, barX, barY + BAR_H + 13)
+
       rafRef.current = requestAnimationFrame(loop);
     };
 
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [posRef, keysRef]);
+  }, [posRef, keysRef, hudRef]);
 
   return (
     <section className={styles.screen_game}>
