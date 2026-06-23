@@ -4,6 +4,8 @@ export type EnemyVariant = "weak" | "strong";
 
 export type EnemyBehavior = "patrol" | "wander" | "chase";
 
+export type EnemyAnimState = "idle" | "move" | "attack" | "death";
+
 export type EnemyRaceConfig = {
   race: string;
   hpRange: [number, number];
@@ -35,6 +37,11 @@ export type Enemy = {
 
   behavior: EnemyBehavior;
   color: string;
+
+  // ANIMAÇÂO
+  animState: EnemyAnimState;
+  frameIndex: number;
+  frameTimer: number;
 
   // Patrulha (strong)
   patrolA?: Position;

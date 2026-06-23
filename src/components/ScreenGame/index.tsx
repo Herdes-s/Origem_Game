@@ -15,6 +15,10 @@ import {
   PLAYER_DIRECTION_ROW,
   PLAYER_SPRITE,
 } from "../../entities/player/playerSprite";
+import {
+  SLIME_ANIMATION_ROW,
+  SLIME_SPRITE,
+} from "../../entities/enemies/slime/slimeSprite";
 
 //HUB
 const HUB_X = 12;
@@ -71,11 +75,29 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
 
   const spriteRef = useRef<HTMLImageElement | null>(null);
 
+  // Sprites dos slimes - um por variante
+  const slimeWeakSpriteRef = useRef<HTMLImageElement | null>(null);
+  const slimeStrongSpriteRef = useRef<HTMLImageElement | null>(null);
+
   useEffect(() => {
+    // CARREGAR SPRITES
     const img = new Image();
     img.src = PLAYER_SPRITE.src;
     img.onload = () => {
       spriteRef.current = img;
+    };
+
+    // Carregar weak e strong separadamente
+    const slimeWeakImg = new Image();
+    slimeWeakImg.src = SLIME_SPRITE.weak.src;
+    slimeWeakImg.onload = () => {
+      slimeWeakSpriteRef.current = slimeWeakImg;
+    };
+
+    const slimeStrongImg = new Image();
+    slimeStrongImg.src = SLIME_SPRITE.strong.src;
+    slimeStrongImg.onload = () => {
+      slimeStrongSpriteRef.current = slimeStrongImg;
     };
 
     const canvas = canvasRef.current;
@@ -91,6 +113,8 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
       const keys = keysRef.current;
       const hud = hudRef.current;
       const enemies = enemiesRef.current;
+
+      //ANIMAÇÂO DO PLAYER
 
       // DIREÇÂO E ANIMAÇÂO
       let moving = false;
@@ -162,45 +186,61 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
         });
       });
 
-      // 2 PERSONAGEM
+      // 2 INIMIGO
       for (const enemy of enemies) {
         const ex = enemy.x - camX;
         const ey = enemy.y - camY;
 
-        if (ex < -32 || ex > SCREEN_W + 32 || ey < -32 || ey > SCREEN_H + 32)
+        if (ex < -64 || ex > SCREEN_W + 64 || ey < -64 || ey > SCREEN_H + 64)
           continue;
 
-        const radius = 12;
+        const spriteConfig =
+          enemy.variant === "strong" ? SLIME_SPRITE.strong : SLIME_SPRITE.weak;
 
-        // Corpo circular do slime (cor vem de slime.ts)
-        ctx.fillStyle = enemy.color;
-        ctx.beginPath();
-        ctx.arc(ex, ey, radius, 0, Math.PI * 2);
-        ctx.fill();
+        const spriteImg =
+          enemy.variant === "strong"
+            ? slimeStrongSpriteRef.current
+            : slimeWeakSpriteRef.current;
 
-        // Outline
-        ctx.strokeStyle = "rgba(0,0,0,0.4)";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        if (spriteImg) {
+          const srcX = enemy.frameIndex * spriteConfig.frameW;
+          const srcY =
+            SLIME_ANIMATION_ROW[enemy.animState] * spriteConfig.frameH;
 
-        // Barra de HP do inimigo
-        const barW = 30;
+          ctx.drawImage(
+            spriteImg,
+            srcX,
+            srcY,
+            spriteConfig.frameW,
+            spriteConfig.frameH,
+            ex - spriteConfig.frameW / 2,
+            ey - spriteConfig.frameH / 2,
+            spriteConfig.frameW,
+            spriteConfig.frameH,
+          );
+        } else {
+          // Fallback círculo enquanto carrega
+          ctx.fillStyle = enemy.color;
+          ctx.beginPath();
+          ctx.arc(ex, ey, 12, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        const barW = 40;
         const barH = 4;
         const barX = ex - barW / 2;
-        const barY = ey - radius - 8;
+        const barY = ey - spriteConfig.frameH / 2 - 8;
         const hpPct = enemy.hp / enemy.hpMax;
 
         ctx.fillStyle = "#1e293b";
         ctx.fillRect(barX, barY, barW, barH);
-
         ctx.fillStyle = getHpColor(hpPct);
         ctx.fillRect(barX, barY, barW * hpPct, barH);
-
         ctx.strokeStyle = "#475569";
         ctx.lineWidth = 0.8;
         ctx.strokeRect(barX, barY, barW, barH);
 
-        // Label da raça e variante
+        // Label
         ctx.font = "8px monospace";
         ctx.fillStyle = "#e2e8f0";
         ctx.textAlign = "center";
@@ -241,7 +281,7 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
       const { hp, hpMax } = hud;
 
       const percent = Math.max(0, Math.min(1, hp / hpMax));
-      const hpColor = getHpColor(percent);
+      
 
       ctx.font = "bold 11px monospace";
       ctx.fillStyle = "#94a3b8";
@@ -255,7 +295,7 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
       ctx.fill();
 
       if (percent > 0) {
-        ctx.fillStyle = hpColor;
+        ctx.fillStyle = getHpColor(percent);
 
         const fillendW = Math.max(1, percent * BAR_W);
         roundRect(ctx, barX2, barY2, fillendW, BAR_H, BAR_RADIUS);
@@ -263,7 +303,14 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
       }
 
       ctx.fillStyle = "rgba(225,225,225,0.15)";
-      roundRect(ctx, barX2 + 2, barY2 + 2, BAR_W - 4, BAR_H / 3, BAR_RADIUS - 1);
+      roundRect(
+        ctx,
+        barX2 + 2,
+        barY2 + 2,
+        BAR_W - 4,
+        BAR_H / 3,
+        BAR_RADIUS - 1,
+      );
       ctx.fill();
 
       ctx.strokeStyle = "#475569";
