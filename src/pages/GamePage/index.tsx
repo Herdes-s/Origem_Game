@@ -3,7 +3,6 @@ import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
 import type { GameKeys, HudState } from "../../types/game";
 import { MAP, MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
-import { wouldCollide } from "../../utils/cillision";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import { createEnemy } from "../../entities/enemies/enemyFactory";
 import {
