@@ -1,5 +1,11 @@
 import { useRef, useEffect } from "react";
-import type { GameKeys, Position, HudState } from "../../types/game";
+import type {
+  GameKeys,
+  Position,
+  HudState,
+  AttackState,
+  GameState,
+} from "../../types/game";
 import styles from "./ScreenGame.module.scss";
 import {
   MAP,
@@ -19,6 +25,7 @@ import {
   SLIME_ANIMATION_ROW,
   SLIME_SPRITE,
 } from "../../entities/enemies/slime/slimeSprite";
+import { PLAYER_CONFIG } from "../../entities/player/player";
 
 //HUB
 const HUB_X = 12;
@@ -54,15 +61,66 @@ function roundRect(
   ctx.closePath();
 }
 
+// Calcula a hitbox do ataque para desenhar no canvas
+function getHitbox(pos: Position, dir: string) {
+  const { hitboxOffset, hitboxW, hitboxH } = PLAYER_CONFIG;
+  const half = hitboxH / 2;
+  switch (dir) {
+    case "right":
+      return {
+        x: pos.x + hitboxOffset,
+        y: pos.y - half,
+        w: hitboxW,
+        h: hitboxH,
+      };
+    case "left":
+      return {
+        x: pos.x - hitboxOffset - hitboxW,
+        y: pos.y - half,
+        w: hitboxW,
+        h: hitboxH,
+      };
+    case "down":
+      return {
+        x: pos.x - half,
+        y: pos.y + hitboxOffset,
+        w: hitboxH,
+        h: hitboxW,
+      };
+    case "up":
+      return {
+        x: pos.x - half,
+        y: pos.y - hitboxOffset - hitboxW,
+        w: hitboxH,
+        h: hitboxW,
+      };
+    default:
+      return { x: pos.x, y: pos.y, w: 0, h: 0 };
+  }
+}
+
 // PROPS
 type Props = {
   posRef: React.RefObject<Position>;
   keysRef: React.RefObject<GameKeys>;
   hudRef: React.RefObject<HudState>;
   enemiesRef: React.RefObject<Enemy[]>;
+  attackRef: React.RefObject<AttackState>;
+  directionRef: React.RefObject<string>;
+  gameStateRef: React.RefObject<GameState>;
+  onRespawn: () => void;
 };
 
-function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
+function ScreenGame({
+  posRef,
+  keysRef,
+  hudRef,
+  enemiesRef,
+  attackRef,
+  directionRef,
+  gameStateRef,
+  onRespawn,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 
@@ -71,7 +129,6 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
   //Todos em refs - não causam re-render
   const frameIndexRef = useRef(0);
   const frameTimerRef = useRef(0);
-  const directionRef = useRef("down");
 
   const spriteRef = useRef<HTMLImageElement | null>(null);
 
@@ -81,10 +138,10 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
 
   useEffect(() => {
     // CARREGAR SPRITES
-    const img = new Image();
-    img.src = PLAYER_SPRITE.src;
-    img.onload = () => {
-      spriteRef.current = img;
+    const playerImg = new Image();
+    playerImg.src = PLAYER_SPRITE.src;
+    playerImg.onload = () => {
+      spriteRef.current = playerImg;
     };
 
     // Carregar weak e strong separadamente
@@ -113,6 +170,9 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
       const keys = keysRef.current;
       const hud = hudRef.current;
       const enemies = enemiesRef.current;
+      const attack = attackRef.current;
+      const direction = directionRef.current;
+      const gameState = gameStateRef.current;
 
       //ANIMAÇÂO DO PLAYER
 
@@ -139,7 +199,7 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
         moving = true;
       }
 
-      if (moving) {
+      if (moving && gameState === "playing") {
         frameTimerRef.current++;
 
         if (frameTimerRef.current >= PLAYER_SPRITE.frameSpeed) {
@@ -202,28 +262,84 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
             ? slimeStrongSpriteRef.current
             : slimeWeakSpriteRef.current;
 
-        if (spriteImg) {
-          const srcX = enemy.frameIndex * spriteConfig.frameW;
-          const srcY =
-            SLIME_ANIMATION_ROW[enemy.animState] * spriteConfig.frameH;
+        const srcX = enemy.frameIndex * spriteConfig.frameW;
+        const srcY = SLIME_ANIMATION_ROW[enemy.animState] * spriteConfig.frameH;
 
-          ctx.drawImage(
-            spriteImg,
-            srcX,
-            srcY,
-            spriteConfig.frameW,
-            spriteConfig.frameH,
-            ex - spriteConfig.frameW / 2,
-            ey - spriteConfig.frameH / 2,
-            spriteConfig.frameW,
-            spriteConfig.frameH,
-          );
+        if (spriteImg) {
+          if (enemy.hp <= 0) {
+            const alpha = Math.max(0, 1 - enemy.frameIndex / 4);
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.drawImage(
+              spriteImg,
+              srcX,
+              srcY,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+              ex - spriteConfig.frameW / 2,
+              ey - spriteConfig.frameH / 2,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+            );
+            ctx.restore();
+            continue;
+          }
+
+          //Frame vermelho
+          if (enemy.hitFlashTimer > 0) {
+            ctx.save();
+            ctx.globalCompositeOperation = "source-over";
+            ctx.drawImage(
+              spriteImg,
+              srcX,
+              srcY,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+              ex - spriteConfig.frameW / 2,
+              ey - spriteConfig.frameH / 2,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+            );
+
+            ctx.globalCompositeOperation = "multiply";
+            ctx.fillStyle = `rgba(255, 80, 80, ${enemy.hitFlashTimer / PLAYER_CONFIG.hitFlashDuration})`;
+            ctx.fillRect(
+              ex - spriteConfig.frameW / 2,
+              ey - spriteConfig.frameH / 2,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+            );
+            ctx.restore();
+          } else {
+            ctx.drawImage(
+              spriteImg,
+              srcX,
+              srcY,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+              ex - spriteConfig.frameW / 2,
+              ey - spriteConfig.frameH / 2,
+              spriteConfig.frameW,
+              spriteConfig.frameH,
+            );
+          }
         } else {
-          // Fallback círculo enquanto carrega
-          ctx.fillStyle = enemy.color;
-          ctx.beginPath();
-          ctx.arc(ex, ey, 12, 0, Math.PI * 2);
-          ctx.fill();
+          if(enemy.hp <= 0) {
+            const alpha = Math.max(0, 1 - (enemy.frameIndex / 4));
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = enemy.color;
+            ctx.beginPath();
+            ctx.arc(ex, ey, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            continue;
+          }
+            ctx.fillStyle = enemy.hitFlashTimer > 0 ? "#ef4444" : enemy.color;
+            ctx.beginPath();
+            ctx.arc(ex, ey, 12, 0, Math.PI * 2);
+            ctx.fill();
+
         }
 
         const barW = 40;
@@ -258,30 +374,61 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
 
       if (spriteRef.current) {
         const srcX = frameIndexRef.current * PLAYER_SPRITE.frameW;
-        const srcY =
-          PLAYER_DIRECTION_ROW[directionRef.current] * PLAYER_SPRITE.frameH;
+        const srcY = PLAYER_DIRECTION_ROW[direction] * PLAYER_SPRITE.frameH;
 
-        ctx.drawImage(
-          spriteRef.current,
-          srcX,
-          srcY,
-          PLAYER_SPRITE.frameW,
-          PLAYER_SPRITE.frameH,
-          screenX - PLAYER_SPRITE.frameW / 2,
-          screenY - PLAYER_SPRITE.frameH / 2,
-          PLAYER_SPRITE.frameW,
-          PLAYER_SPRITE.frameH,
-        );
+        if (attack.hitFlash > 0) {
+          ctx.save();
+          ctx.drawImage(
+            spriteRef.current,
+            srcX,
+            srcY,
+            PLAYER_SPRITE.frameW,
+            PLAYER_SPRITE.frameH,
+            screenX - PLAYER_SPRITE.frameW / 2,
+            screenY - PLAYER_SPRITE.frameH / 2,
+            PLAYER_SPRITE.frameW,
+            PLAYER_SPRITE.frameH,
+          );
+          ctx.globalCompositeOperation = "multiply";
+          ctx.fillStyle = `rgba(255, 80, 80, ${attack.hitFlash / PLAYER_CONFIG.hitFlashDuration})`;
+          ctx.fillRect(
+            screenX - PLAYER_SPRITE.frameW / 2,
+            screenY - PLAYER_SPRITE.frameH / 2,
+            PLAYER_SPRITE.frameW,
+            PLAYER_SPRITE.frameH,
+          );
+          ctx.restore();
+        } else {
+          ctx.drawImage(
+            spriteRef.current,
+            srcX,
+            srcY,
+            PLAYER_SPRITE.frameW,
+            PLAYER_SPRITE.frameH,
+            screenX - PLAYER_SPRITE.frameW / 2,
+            screenY - PLAYER_SPRITE.frameH / 2,
+            PLAYER_SPRITE.frameW,
+            PLAYER_SPRITE.frameH,
+          );
+        }
       } else {
-        ctx.fillStyle = "#fde68a";
+        ctx.fillStyle = attack.hitFlash > 0 ? "#ef4444" : "#fde68a";
         ctx.fillRect(screenX - 10, screenY - 10, 20, 20);
+      }
+
+      if (attack.active) {
+        const hb = getHitbox(pos, attack.direction);
+        ctx.fillStyle = "rgba(255, 200, 0, 0.25)";
+        ctx.fillRect(hb.x - camX, hb.y - camY, hb.w, hb.h);
+        ctx.strokeStyle = "rgba(255, 200, 0, 0.8)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(hb.x - camX, hb.y - camY, hb.w, hb.h);
       }
 
       // 4 HUB
       const { hp, hpMax } = hud;
 
       const percent = Math.max(0, Math.min(1, hp / hpMax));
-      
 
       ctx.font = "bold 11px monospace";
       ctx.fillStyle = "#94a3b8";
@@ -322,12 +469,80 @@ function ScreenGame({ posRef, keysRef, hudRef, enemiesRef }: Props) {
       ctx.fillStyle = "#94a3b8";
       ctx.fillText(`${hp} / ${hpMax}`, barX2, barY2 + BAR_H + 13);
 
+      //TELA DE MORTE
+      if (gameState === "dead") {
+        // Overlay escuro semitransparente
+        ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+        ctx.fillRect(0, 0, SCREEN_W, SCREEN_H);
+
+        // Texto "Você morreu"
+        ctx.font = "bold 28px monospace";
+        ctx.fillStyle = "#ef4444";
+        ctx.textAlign = "center";
+        ctx.fillText("Você morreu", SCREEN_W / 2, SCREEN_H / 2 - 30);
+
+        // Botão de renascer — desenhado como retângulo clicável
+        const btnW = 160;
+        const btnH = 44;
+        const btnX = SCREEN_W / 2 - btnW / 2;
+        const btnY = SCREEN_H / 2;
+
+        ctx.fillStyle = "#166534";
+        roundRect(ctx, btnX, btnY, btnW, btnH, 8);
+        ctx.fill();
+
+        ctx.strokeStyle = "#22c55e";
+        ctx.lineWidth = 2;
+        roundRect(ctx, btnX, btnY, btnW, btnH, 8);
+        ctx.stroke();
+
+        ctx.font = "bold 16px monospace";
+        ctx.fillStyle = "#dcfce7";
+        ctx.fillText("↺  Renascer", SCREEN_W / 2, btnY + 28);
+
+        ctx.textAlign = "left";
+      }
+
       rafRef.current = requestAnimationFrame(loop);
     };
 
+    const handleCanvasClick = (e: MouseEvent) => {
+      if (gameStateRef.current !== "dead") return;
+
+      const rect = canvasRef.current!.getBoundingClientRect();
+      // Escala o clique para coordenadas do canvas (pode estar escalado por CSS)
+      const scaleX = SCREEN_W / rect.width;
+      const scaleY = SCREEN_H / rect.height;
+      const cx = (e.clientX - rect.left) * scaleX;
+      const cy = (e.clientY - rect.top) * scaleY;
+
+      const btnW = 160;
+      const btnH = 44;
+      const btnX = SCREEN_W / 2 - btnW / 2;
+      const btnY = SCREEN_H / 2;
+
+      if (cx >= btnX && cx <= btnX + btnW && cy >= btnY && cy <= btnY + btnH) {
+        onRespawn();
+      }
+    };
+
+    canvasRef.current?.addEventListener("click", handleCanvasClick);
     rafRef.current = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [posRef, keysRef, hudRef, enemiesRef]);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      canvasRef.current?.removeEventListener("click", handleCanvasClick);
+    };
+  }, [
+    posRef,
+    keysRef,
+    hudRef,
+    enemiesRef,
+    attackRef,
+    directionRef,
+    gameStateRef,
+    onRespawn,
+  ]);
 
   return (
     <section className={styles.screen_game}>

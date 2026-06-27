@@ -44,6 +44,12 @@ export function createEnemy(
     frameIndex: 0,
     frameTimer: 0,
 
+    hitFlashTimer: 0,
+    knockbackX: 0,
+    knockbackY: 0,
+
+    deathAnimDone: false,
+
     patrolA:      isStrong ? patrolA : undefined,
     patrolB:      isStrong ? patrolB : undefined,
     patrolTarget: isStrong ? "B"     : undefined,

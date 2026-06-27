@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
-import type { GameKeys, HudState } from "../../types/game";
+import type { AttackState, GameKeys, GameState, HudState } from "../../types/game";
 import { MAP, MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import { createEnemy } from "../../entities/enemies/enemyFactory";
@@ -21,7 +21,7 @@ const SPAWN_MARGIN_TILES = 2;
 
 function isSafeSpawnTile(tileX: number, tileY: number): boolean {
   for (let dy = -SPAWN_MARGIN_TILES; dy <= SPAWN_MARGIN_TILES; dy++) {
-    for (let dx = -SPAWN_MARGIN_TILES; dx < +SPAWN_MARGIN_TILES; dx++) {
+    for (let dx = -SPAWN_MARGIN_TILES; dx <= +SPAWN_MARGIN_TILES; dx++) {
       const row = MAP[tileY + dy];
       if (!row) return false;
       const tile = row[tileX + dx];
@@ -35,7 +35,7 @@ function getSafeTiles(): { x: number; y: number }[] {
   const safe: { x: number; y: number }[] = [];
 
   for (let ty = 0; ty < MAP.length; ty++) {
-    for (let tx = 0; tx < MAP.length; tx++) {
+    for (let tx = 0; tx < MAP[0].length; tx++) {
       if (isSafeSpawnTile(tx, ty)) {
         safe.push({
           x: tx * TILE_SIZE + TILE_SIZE / 2,
@@ -119,6 +119,19 @@ function GamePage() {
   });
   const enemiesRef = useRef<Enemy[]>(spawnEnemies());
 
+  const attackRef = useRef<AttackState>({
+    active: false,
+    cooldown: 0,
+    duration: 0,
+    direction: "down",
+    hitFlash: 0,
+    hitEnemyIds: new Set(),
+  });
+
+  const directionRef = useRef("down");
+
+  const gameStateRef = useRef<GameState>("playing");
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
@@ -137,13 +150,33 @@ function GamePage() {
 
     const loop = () => {
       // Movimento do palyer - lógica isolada em playerMoviment.ts
-      updatePlayerMovement(posRef.current, keysRef.current);
+      if (gameStateRef.current === "playing") {
+        updatePlayerMovement(
+          posRef.current,
+          keysRef.current,
+          attackRef.current,
+          enemiesRef.current,
+          directionRef,
+        );
 
-      // Atualizar todos os inimigos - IA, movimento e dano
-      updateEnemies(enemiesRef.current, posRef.current, hudRef.current);
+        // Atualizar todos os inimigos - IA, movimento e dano
+        updateEnemies(
+          enemiesRef.current,
+          posRef.current,
+          hudRef.current,
+          attackRef,
+        );
 
-      // Remover inimigo morto
-      enemiesRef.current = enemiesRef.current.filter((e) => e.hp > 0);
+        // Remover inimigo morto
+        enemiesRef.current = enemiesRef.current.filter(
+          (e) => !e.deathAnimDone,
+        );
+
+        // Checar morte do palyer
+        if (hudRef.current.hp <= 0) {
+          gameStateRef.current = "dead";
+        }
+      }
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -157,6 +190,21 @@ function GamePage() {
     };
   }, []);
 
+  const handleRespawn = () => {
+    posRef.current = { x: START_X, y: START_Y };
+    hudRef.current.hp = PLAYER_CONFIG.hpMax;
+    enemiesRef.current = spawnEnemies();
+    attackRef.current = {
+      active: false,
+      cooldown: 0,
+      duration: 0,
+      direction: "down",
+      hitFlash: 0,
+      hitEnemyIds: new Set(),
+    };
+    gameStateRef.current = "playing";
+  };
+
   return (
     <>
       <ScreenGame
@@ -164,8 +212,16 @@ function GamePage() {
         keysRef={keysRef}
         hudRef={hudRef}
         enemiesRef={enemiesRef}
+        attackRef={attackRef}
+        directionRef={directionRef}
+        gameStateRef={gameStateRef}
+        onRespawn={handleRespawn}
       />
-      <ControlGame keysRef={keysRef} />
+      <ControlGame
+        keysRef={keysRef}
+        attackRef={attackRef}
+        directionRef={directionRef}
+      />
     </>
   );
 }

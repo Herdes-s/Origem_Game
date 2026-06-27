@@ -1,5 +1,6 @@
-import type { HudState, Position } from "../../types/game";
+import type { AttackState, HudState, Position } from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
+import { PLAYER_CONFIG } from "../player/player";
 import type { Enemy } from "./enemyTypes";
 import { SLIME_FRAME_SPEED } from "./slime/slimeSprite";
 
@@ -20,6 +21,25 @@ function moveEnemy(enemy: Enemy, dx: number, dy: number) {
 
   if (!wouldCollide(nextX, enemy.y)) enemy.x = nextX;
   if (!wouldCollide(enemy.x, nextY)) enemy.y = nextY;
+}
+
+// KNOCKBACK
+function apllyKnockback(enemy: Enemy) {
+  if (Math.abs(enemy.knockbackX) < 0.1) enemy.knockbackX = 0;
+  if (Math.abs(enemy.knockbackY) < 0.1) enemy.knockbackY = 0;
+  if (enemy.knockbackX === 0 && enemy.knockbackY === 0) return;
+
+  const nextX = enemy.x + enemy.knockbackX;
+  const nextY = enemy.y + enemy.knockbackY;
+
+  if (!wouldCollide(nextX, enemy.y)) enemy.x = nextX;
+  else enemy.knockbackX = 0;
+
+  if (!wouldCollide(enemy.x, nextY)) enemy.y = nextY;
+  else enemy.knockbackY = 0;
+
+  enemy.knockbackX *= PLAYER_CONFIG.knockbackDecay;
+  enemy.knockbackY *= PLAYER_CONFIG.knockbackDecay;
 }
 
 // ANIMAÇÂO
@@ -80,7 +100,12 @@ function wander(enemy: Enemy) {
   moveEnemy(enemy, enemy.wanderDx, enemy.wanderDy);
 }
 
-function tryDamagePlayer(enemy: Enemy, player: Position, hud: HudState) {
+function tryDamagePlayer(
+  enemy: Enemy,
+  player: Position,
+  hud: HudState,
+  attackRef: React.RefObject<AttackState>,
+) {
   if (enemy.damageCooldownTimer > 0) {
     enemy.damageCooldownTimer--;
     return;
@@ -90,9 +115,15 @@ function tryDamagePlayer(enemy: Enemy, player: Position, hud: HudState) {
     hud.hp = Math.max(0, hud.hp - enemy.damage);
     enemy.damageCooldownTimer = enemy.damageCooldown;
 
-    enemy.animState = "attack";
-    enemy.frameIndex = 0;
-    enemy.frameTimer = 0;
+    if (attackRef.current) {
+      attackRef.current.hitFlash = PLAYER_CONFIG.hitFlashDuration;
+    }
+
+    if (enemy.knockbackX === 0 && enemy.knockbackY === 0) {
+      enemy.animState = "attack";
+      enemy.frameIndex = 0;
+      enemy.frameTimer = 0;
+    }
   }
 }
 
@@ -101,19 +132,34 @@ export function updateEnemies(
   enemies: Enemy[],
   player: Position,
   hud: HudState,
+  attackRef: React.RefObject<AttackState>,
 ) {
   for (const enemy of enemies) {
+    if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer--;
+
+    apllyKnockback(enemy);
+
     if (enemy.hp <= 0) {
-      enemy.animState = "death";
-      updateAnimation(enemy);
+      if (enemy.animState !== "death") {
+        enemy.animState = "death";
+        enemy.frameIndex = 0;
+        enemy.frameTimer = 0;
+      }
+
+      const cycleDone = updateAnimation(enemy);
+      if (cycleDone) {
+        enemy.deathAnimDone = true;
+      }
+
       continue;
     }
 
     if (enemy.animState === "attack") {
-      const cycleFinished = updateAnimation(enemy);
-      if (cycleFinished) {
+      const done = updateAnimation(enemy);
+      if (done) {
         enemy.animState = enemy.behavior === "chase" ? "move" : "idle";
       }
+      tryDamagePlayer(enemy, player, hud, attackRef);
       continue;
     }
 
@@ -137,7 +183,7 @@ export function updateEnemies(
         break;
     }
 
-    tryDamagePlayer(enemy, player, hud);
+    tryDamagePlayer(enemy, player, hud, attackRef);
     updateAnimation(enemy);
   }
 }

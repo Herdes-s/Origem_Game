@@ -43,6 +43,15 @@ export type Enemy = {
   frameIndex: number;
   frameTimer: number;
 
+  // Flash vermelho ao receber dano
+  hitFlashTimer: number;
+
+  //Knockback - velocidade residual após ser empurrado
+  knockbackX: number;
+  knockbackY: number;
+
+  deathAnimDone: boolean;
+
   // Patrulha (strong)
   patrolA?: Position;
   patrolB?: Position;
