@@ -1,22 +1,38 @@
 @import "../../styles/variables";
 
+// Container da tela — ocupa todo o viewport
+// O canvas escala dentro dele via object-fit
 .screen_game {
+  position: fixed;
+  inset: 0; // top: 0, right: 0, bottom: 0, left: 0
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
+  background: #0f172a;
+  overflow: hidden;
 }
- 
+
+.screen_base {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .canvas {
-  max-width: 90vw;
+  // Ocupa o máximo possível mantendo proporção do canvas (480x500)
+  // width/height em px são definidos no elemento, CSS só escala visualmente
+  max-width: 100vw;
+  max-height: 100vh;
+  width: auto;
   height: auto;
- 
-  border: 2px solid #334155;
-  border-radius: 8px;
 
   image-rendering: pixelated;
 
-  @media(max-width: 768px) {
-    
+  // No mobile deixa ocupar tudo verticalmente
+  // e sobra espaço embaixo para os botões em absolute
+  @media (max-width: 767px) {
+    max-height: calc(100vh - 220px); // reserva espaço para os controles
   }
 }
