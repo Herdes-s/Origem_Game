@@ -8,7 +8,7 @@ export const PLAYER_CONFIG = {
   attackCooldown: 25, // frames entre ataques (~0.4s a 60fps)
 
   // Hitbox de ataque
-  hitboxOffset: 12, // distância da frente do player
+  hitboxOffset: 16, // distância da frente do player
   hitboxW: 52, // largura da hitbox
   hitboxH: 44, // altura da hitbox
 
@@ -17,7 +17,7 @@ export const PLAYER_CONFIG = {
   knockbackDecay: 0.8, // multiplicador por frame (desacelera suavemente)
 
   // Flash vermelho ao receber dano
-  hitFlashDuration: 10, // frames de flash
+  hitFlashDuration: 20, // frames de flash
 };
 
 export const PLAYER_START = {

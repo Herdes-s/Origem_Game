@@ -136,6 +136,9 @@ function ScreenGame({
   const slimeWeakSpriteRef = useRef<HTMLImageElement | null>(null);
   const slimeStrongSpriteRef = useRef<HTMLImageElement | null>(null);
 
+  const flashCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const flashCanvasCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+
   useEffect(() => {
     // CARREGAR SPRITES
     const playerImg = new Image();
@@ -164,6 +167,12 @@ function ScreenGame({
     if (!ctx) return;
 
     ctx.imageSmoothingEnabled = false;
+
+    const flashCanvas = document.createElement("canvas");
+    flashCanvas.width = 64;
+    flashCanvas.height = 64;
+    flashCanvasRef.current = flashCanvas;
+    flashCanvasCtxRef.current = flashCanvas.getContext("2d");
 
     const loop = () => {
       const pos = posRef.current;
@@ -287,29 +296,36 @@ function ScreenGame({
 
           //Frame vermelho
           if (enemy.hitFlashTimer > 0) {
-            ctx.save();
-            ctx.globalCompositeOperation = "source-over";
-            ctx.drawImage(
-              spriteImg,
-              srcX,
-              srcY,
-              spriteConfig.frameW,
-              spriteConfig.frameH,
-              ex - spriteConfig.frameW / 2,
-              ey - spriteConfig.frameH / 2,
-              spriteConfig.frameW,
-              spriteConfig.frameH,
-            );
-
-            ctx.globalCompositeOperation = "multiply";
-            ctx.fillStyle = `rgba(255, 80, 80, ${enemy.hitFlashTimer / PLAYER_CONFIG.hitFlashDuration})`;
-            ctx.fillRect(
-              ex - spriteConfig.frameW / 2,
-              ey - spriteConfig.frameH / 2,
-              spriteConfig.frameW,
-              spriteConfig.frameH,
-            );
-            ctx.restore();
+            const offCtx = flashCanvasCtxRef.current;
+            const off = flashCanvasRef.current;
+            if (offCtx && off) {
+              // Limpa o canvas temporário do frame anterior
+              offCtx.clearRect(0, 0, off.width, off.height);
+              // 1. Desenha o frame atual do sprite
+              offCtx.drawImage(
+                spriteImg,
+                srcX,
+                srcY,
+                spriteConfig.frameW,
+                spriteConfig.frameH,
+                0,
+                0,
+                spriteConfig.frameW,
+                spriteConfig.frameH,
+              );
+              // 2. source-atop: tint vermelho só sobre pixels visíveis do sprite
+              offCtx.globalCompositeOperation = "source-atop";
+              offCtx.fillStyle = `rgba(255, 60, 60, ${(enemy.hitFlashTimer / PLAYER_CONFIG.hitFlashDuration) * 0.9})`;
+              offCtx.fillRect(0, 0, spriteConfig.frameW, spriteConfig.frameH);
+              // 3. Reseta para próxima operação
+              offCtx.globalCompositeOperation = "source-over";
+              // 4. Copia resultado para o canvas principal
+              ctx.drawImage(
+                off,
+                ex - spriteConfig.frameW / 2,
+                ey - spriteConfig.frameH / 2,
+              );
+            }
           } else {
             ctx.drawImage(
               spriteImg,
@@ -324,8 +340,8 @@ function ScreenGame({
             );
           }
         } else {
-          if(enemy.hp <= 0) {
-            const alpha = Math.max(0, 1 - (enemy.frameIndex / 4));
+          if (enemy.hp <= 0) {
+            const alpha = Math.max(0, 1 - enemy.frameIndex / 4);
             ctx.save();
             ctx.globalAlpha = alpha;
             ctx.fillStyle = enemy.color;
@@ -335,11 +351,10 @@ function ScreenGame({
             ctx.restore();
             continue;
           }
-            ctx.fillStyle = enemy.hitFlashTimer > 0 ? "#ef4444" : enemy.color;
-            ctx.beginPath();
-            ctx.arc(ex, ey, 12, 0, Math.PI * 2);
-            ctx.fill();
-
+          ctx.fillStyle = enemy.hitFlashTimer > 0 ? "#ef4444" : enemy.color;
+          ctx.beginPath();
+          ctx.arc(ex, ey, 12, 0, Math.PI * 2);
+          ctx.fill();
         }
 
         const barW = 40;
@@ -377,27 +392,31 @@ function ScreenGame({
         const srcY = PLAYER_DIRECTION_ROW[direction] * PLAYER_SPRITE.frameH;
 
         if (attack.hitFlash > 0) {
-          ctx.save();
-          ctx.drawImage(
-            spriteRef.current,
-            srcX,
-            srcY,
-            PLAYER_SPRITE.frameW,
-            PLAYER_SPRITE.frameH,
-            screenX - PLAYER_SPRITE.frameW / 2,
-            screenY - PLAYER_SPRITE.frameH / 2,
-            PLAYER_SPRITE.frameW,
-            PLAYER_SPRITE.frameH,
-          );
-          ctx.globalCompositeOperation = "multiply";
-          ctx.fillStyle = `rgba(255, 80, 80, ${attack.hitFlash / PLAYER_CONFIG.hitFlashDuration})`;
-          ctx.fillRect(
-            screenX - PLAYER_SPRITE.frameW / 2,
-            screenY - PLAYER_SPRITE.frameH / 2,
-            PLAYER_SPRITE.frameW,
-            PLAYER_SPRITE.frameH,
-          );
-          ctx.restore();
+          const offCtx = flashCanvasCtxRef.current;
+          const off = flashCanvasRef.current;
+          if (offCtx && off) {
+            offCtx.clearRect(0, 0, off.width, off.height);
+            offCtx.drawImage(
+              spriteRef.current,
+              srcX,
+              srcY,
+              PLAYER_SPRITE.frameW,
+              PLAYER_SPRITE.frameH,
+              0,
+              0,
+              PLAYER_SPRITE.frameW,
+              PLAYER_SPRITE.frameH,
+            );
+            offCtx.globalCompositeOperation = "source-atop";
+            offCtx.fillStyle = `rgba(255, 60, 60, ${(attack.hitFlash / PLAYER_CONFIG.hitFlashDuration) * 0.9})`;
+            offCtx.fillRect(0, 0, PLAYER_SPRITE.frameW, PLAYER_SPRITE.frameH);
+            offCtx.globalCompositeOperation = "source-over";
+            ctx.drawImage(
+              off,
+              screenX - PLAYER_SPRITE.frameW / 2,
+              screenY - PLAYER_SPRITE.frameH / 2,
+            );
+          }
         } else {
           ctx.drawImage(
             spriteRef.current,
