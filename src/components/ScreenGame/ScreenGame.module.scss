@@ -30,9 +30,4 @@
 
   image-rendering: pixelated;
 
-  // No mobile deixa ocupar tudo verticalmente
-  // e sobra espaço embaixo para os botões em absolute
-  @media (max-width: 767px) {
-    max-height: calc(100vh - 220px); // reserva espaço para os controles
-  }
 }
