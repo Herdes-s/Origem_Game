@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import type {
   GameKeys,
   Position,
@@ -8,14 +8,12 @@ import type {
 } from "../../types/game";
 import styles from "./ScreenGame.module.scss";
 import {
+  calcZoom,
   MAP,
   MAP_H,
   MAP_W,
-  SCREEN_H,
-  SCREEN_W,
   TILE_COLORS,
   TILE_SIZE,
-  ZOOM,
 } from "../../data/map";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import {
@@ -128,8 +126,27 @@ function ScreenGame({
   gameStateRef,
   onRespawn,
 }: Props) {
+  const [screenW, setScreenW] = useState(() => window.innerWidth);
+  const [screenH, setScreenH] = useState(() => window.innerHeight);
+  const zoom = calcZoom(screenW);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+
+  const screenWRef = useRef(screenW);
+  const screenHRef = useRef(screenH);
+  const zoomRef = useRef(zoom);
+
+  useEffect(() => {
+    screenWRef.current = screenW;
+    screenHRef.current = screenH;
+    zoomRef.current = zoom;
+
+    if (canvasRef.current) {
+      canvasRef.current.width = screenW;
+      canvasRef.current.height = screenH;
+    }
+  }, [screenW, screenH, zoom]);
 
   // ESTADO DA ANIMAÇÂO DO PALYER
 
@@ -149,6 +166,22 @@ function ScreenGame({
 
   const flashCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const flashCanvasCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenW(window.innerWidth);
+      setScreenH(window.innerHeight);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    window.visualViewport?.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.visualViewport?.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     // CARREGAR SPRITES
@@ -186,6 +219,10 @@ function ScreenGame({
     flashCanvasCtxRef.current = flashCanvas.getContext("2d");
 
     const loop = () => {
+      const SCREEN_W = screenWRef.current;
+      const SCREEN_H = screenHRef.current;
+      const ZOOM = zoomRef.current;
+
       const pos = posRef.current;
       const keys = keysRef.current;
       const hud = hudRef.current;
@@ -250,7 +287,6 @@ function ScreenGame({
       }
 
       // CÂMERA
-
       const viewW = SCREEN_W / ZOOM;
       const viewH = SCREEN_H / ZOOM;
 
@@ -569,6 +605,9 @@ function ScreenGame({
     const handleCanvasClick = (e: MouseEvent) => {
       if (gameStateRef.current !== "dead") return;
 
+      const SCREEN_W = screenWRef.current;
+      const SCREEN_H = screenHRef.current;
+
       const rect = canvasRef.current!.getBoundingClientRect();
       // Escala o clique para coordenadas do canvas (pode estar escalado por CSS)
       const scaleX = SCREEN_W / rect.width;
@@ -609,8 +648,8 @@ function ScreenGame({
       <div className={styles.screen_base}>
         <canvas
           ref={canvasRef}
-          width={SCREEN_W}
-          height={SCREEN_H}
+          width={screenW}
+          height={screenH}
           className={styles.canvas}
         />
       </div>

@@ -30,16 +30,11 @@ export const MAP: TileMap = [
 export const MAP_W = MAP[0].length * TILE_SIZE;
 export const MAP_H = MAP.length * TILE_SIZE;
 
-const BASE_VISIBLE_TILES_W = 20;
+const BASE_VISIBLE_TILES_W = 10;
 
-export const SCREEN_W = window.innerWidth;
-export const SCREEN_H = window.innerHeight;
-
-export const ZOOM = SCREEN_W / (BASE_VISIBLE_TILES_W * TILE_SIZE)
-
-export const TILE_SIZE_SCALED = TILE_SIZE * ZOOM;
-
-export const VISIBLE_TILES_H = SCREEN_H / TILE_SIZE_SCALED;
+export function calcZoom(screenW: number): number {
+  return screenW / (BASE_VISIBLE_TILES_W * TILE_SIZE);
+}
 
 export const TILE_COLORS: Record<number, string> = {
   0: "#1e293b",
