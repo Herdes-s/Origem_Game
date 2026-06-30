@@ -15,6 +15,7 @@ import {
   SCREEN_W,
   TILE_COLORS,
   TILE_SIZE,
+  ZOOM,
 } from "../../data/map";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import {
@@ -63,6 +64,8 @@ function roundRect(
   ctx.closePath();
 }
 
+// FLAG DE DEBUG — true mostra o quadrado da hitbox, false esconde
+// Mude para true sempre que quiser calibrar visualmente o alcance do ataque
 const DEBUG_HITBOX = false;
 
 // Calcula a hitbox do ataque para desenhar no canvas
@@ -247,14 +250,21 @@ function ScreenGame({
       }
 
       // CÂMERA
-      let camX = pos.x - SCREEN_W / 2;
-      let camY = pos.y - SCREEN_H / 2;
 
-      camX = Math.max(0, Math.min(MAP_W - SCREEN_W, camX));
-      camY = Math.max(0, Math.min(MAP_H - SCREEN_H, camY));
+      const viewW = SCREEN_W / ZOOM;
+      const viewH = SCREEN_H / ZOOM;
+
+      let camX = pos.x - viewW / 2;
+      let camY = pos.y - viewH / 2;
+
+      camX = Math.max(0, Math.min(MAP_W - viewW, camX));
+      camY = Math.max(0, Math.min(MAP_H - viewH, camY));
 
       // LIMPA O FRAME
       ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
+
+      ctx.save();
+      ctx.scale(ZOOM, ZOOM);
 
       // 1 MAPA
       MAP.forEach((row, rowIndex) => {
@@ -472,6 +482,8 @@ function ScreenGame({
         ctx.lineWidth = 1;
         ctx.strokeRect(hb.x - camX, hb.y - camY, hb.w, hb.h);
       }
+
+      ctx.restore();
 
       // 4 HUB
       const { hp, hpMax } = hud;
