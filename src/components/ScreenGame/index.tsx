@@ -18,6 +18,8 @@ import {
 } from "../../data/map";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import {
+  PLAYER_ATTACK_FRAME_SPEED,
+  PLAYER_ATTACK_ROW,
   PLAYER_DIRECTION_ROW,
   PLAYER_SPRITE,
 } from "../../entities/player/playerSprite";
@@ -60,6 +62,8 @@ function roundRect(
   ctx.arcTo(x, y, x + r, y, r);
   ctx.closePath();
 }
+
+const DEBUG_HITBOX = false;
 
 // Calcula a hitbox do ataque para desenhar no canvas
 function getHitbox(pos: Position, dir: string) {
@@ -131,6 +135,10 @@ function ScreenGame({
   const frameTimerRef = useRef(0);
 
   const spriteRef = useRef<HTMLImageElement | null>(null);
+
+  const attackFrameIndexRef = useRef(0);
+  const attackFrameTimerRef = useRef(0);
+  const isAttackingRef = useRef(false);
 
   // Sprites dos slimes - um por variante
   const slimeWeakSpriteRef = useRef<HTMLImageElement | null>(null);
@@ -206,6 +214,22 @@ function ScreenGame({
       if (keys["ArrowRight"] || keys["d"]) {
         directionRef.current = "right";
         moving = true;
+      }
+
+      if (attack.active && gameState === "playing") {
+        isAttackingRef.current = true;
+        attackFrameTimerRef.current++;
+        if (attackFrameTimerRef.current >= PLAYER_ATTACK_FRAME_SPEED) {
+          attackFrameTimerRef.current = 0;
+          attackFrameIndexRef.current =
+            (attackFrameIndexRef.current + 1) % PLAYER_SPRITE.frameCount;
+        }
+      } else {
+        if (isAttackingRef.current) {
+          attackFrameIndexRef.current = 0;
+          attackFrameTimerRef.current = 0;
+          isAttackingRef.current = false;
+        }
       }
 
       if (moving && gameState === "playing") {
@@ -388,8 +412,13 @@ function ScreenGame({
       const screenY = pos.y - camY;
 
       if (spriteRef.current) {
-        const srcX = frameIndexRef.current * PLAYER_SPRITE.frameW;
-        const srcY = PLAYER_DIRECTION_ROW[direction] * PLAYER_SPRITE.frameH;
+        const srcX = attack.active
+          ? attackFrameIndexRef.current * PLAYER_SPRITE.frameW
+          : frameIndexRef.current * PLAYER_SPRITE.frameW;
+
+        const srcY = attack.active
+          ? PLAYER_ATTACK_ROW[direction] * PLAYER_SPRITE.frameH
+          : PLAYER_DIRECTION_ROW[direction] * PLAYER_SPRITE.frameH;
 
         if (attack.hitFlash > 0) {
           const offCtx = flashCanvasCtxRef.current;
@@ -435,7 +464,7 @@ function ScreenGame({
         ctx.fillRect(screenX - 10, screenY - 10, 20, 20);
       }
 
-      if (attack.active) {
+      if (DEBUG_HITBOX && attack.active) {
         const hb = getHitbox(pos, attack.direction);
         ctx.fillStyle = "rgba(255, 200, 0, 0.25)";
         ctx.fillRect(hb.x - camX, hb.y - camY, hb.w, hb.h);

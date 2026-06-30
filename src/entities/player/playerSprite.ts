@@ -13,3 +13,12 @@ export const PLAYER_DIRECTION_ROW: Record<string, number> = {
     left: 2,
     right: 3,
 };
+
+export const PLAYER_ATTACK_ROW: Record<string, number> = {
+    down: 4,
+    up: 5,
+    left: 6,
+    right: 7,
+} ;
+
+export const PLAYER_ATTACK_FRAME_SPEED = 3;
