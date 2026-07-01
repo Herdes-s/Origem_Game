@@ -29,3 +29,13 @@ export type AttackState = {
 };
 
 export type GameState = "playing" | "dead";
+
+export type DamageNumber = {
+  id: number;
+  x: number;
+  y: number;
+  value: number;
+  timer: number;
+  maxTimer: number;
+  isCrit: boolean;
+}

@@ -5,6 +5,7 @@ import type {
   HudState,
   AttackState,
   GameState,
+  DamageNumber,
 } from "../../types/game";
 import styles from "./ScreenGame.module.scss";
 import {
@@ -113,6 +114,7 @@ type Props = {
   attackRef: React.RefObject<AttackState>;
   directionRef: React.RefObject<string>;
   gameStateRef: React.RefObject<GameState>;
+  damageNumbersRef: React.RefObject<DamageNumber[]>;
   onRespawn: () => void;
 };
 
@@ -124,6 +126,7 @@ function ScreenGame({
   attackRef,
   directionRef,
   gameStateRef,
+  damageNumbersRef,
   onRespawn,
 }: Props) {
   const [screenW, setScreenW] = useState(() => window.innerWidth);
@@ -510,6 +513,45 @@ function ScreenGame({
         ctx.fillRect(screenX - 10, screenY - 10, 20, 20);
       }
 
+      // ── NÚMEROS DE DANO FLUTUANTES ───────────────────────────
+      // Desenhados dentro do ctx.scale(ZOOM) para ficarem no mundo
+      // Sobem gradualmente e somem conforme o timer diminui
+      for (const dn of damageNumbersRef.current) {
+        const dnX = dn.x - camX;
+        const dnY = dn.y - camY;
+
+        // Culling — pula se fora da tela
+        if (dnX < -40 || dnX > viewW + 40 || dnY < -40 || dnY > viewH + 40)
+          continue;
+
+        // Alpha: começa em 1.0 e vai a 0 conforme o timer cai
+        const alpha = dn.timer / dn.maxTimer;
+
+        // Tamanho: começa menor e cresce levemente no início (punch feel)
+        const scale =
+          dn.timer > dn.maxTimer * 0.8
+            ? 1 + (1 - dn.timer / dn.maxTimer) * 2 // cresce rápido no início
+            : 1.2; // tamanho fixo depois
+
+        const fontSize = Math.round(8 * scale);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.font = `bold ${fontSize}px monospace`;
+        ctx.textAlign = "center";
+
+        // Sombra para legibilidade sobre qualquer fundo
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fillText(String(dn.value), dnX + 1, dnY + 1);
+
+        // Texto principal — amarelo dourado
+        ctx.fillStyle = "#fde68a";
+        ctx.fillText(String(dn.value), dnX, dnY);
+
+        ctx.restore();
+      }
+      ctx.textAlign = "left";
+
       if (DEBUG_HITBOX && attack.active) {
         const hb = getHitbox(pos, attack.direction);
         ctx.fillStyle = "rgba(255, 200, 0, 0.25)";
@@ -565,6 +607,13 @@ function ScreenGame({
       ctx.fillStyle = "#94a3b8";
       ctx.fillText(`${hp} / ${hpMax}`, barX2, barY2 + BAR_H + 13);
 
+      const { score } = hud;
+      ctx.font = "bold 11px monospace";
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#fde68a";
+      ctx.fillText(`${score} pts`, SCREEN_W - 12, 26);
+      ctx.textAlign = "left";
+
       //TELA DE MORTE
       if (gameState === "dead") {
         // Overlay escuro semitransparente
@@ -576,6 +625,11 @@ function ScreenGame({
         ctx.fillStyle = "#ef4444";
         ctx.textAlign = "center";
         ctx.fillText("Você morreu", SCREEN_W / 2, SCREEN_H / 2 - 30);
+
+        //Score final
+        ctx.font = "bold 16px monospace";
+        ctx.fillStyle = "#fde68a";
+        ctx.fillText(`Score: ${score} pts`, SCREEN_W / 2, SCREEN_H / 2 - 20);
 
         // Botão de renascer — desenhado como retângulo clicável
         const btnW = 160;
@@ -640,6 +694,7 @@ function ScreenGame({
     attackRef,
     directionRef,
     gameStateRef,
+    damageNumbersRef,
     onRespawn,
   ]);
 

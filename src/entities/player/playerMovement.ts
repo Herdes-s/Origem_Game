@@ -1,11 +1,17 @@
-import type {
-  GameKeys,
-  Position,
-  AttackState,
-} from "../../types/game";
+import type { GameKeys, Position, AttackState, DamageNumber, HudState } from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
 import { PLAYER_CONFIG } from "./player";
 import type { Enemy } from "../enemies/enemyTypes";
+
+// Contador global para IDs únicos dos números de dano
+let dmgNumberId = 0;
+
+// Frames que o número de dano fica visível
+const DAMAGE_NUMBER_LIFETIME = 50;
+
+// Pontos ganhos ao matar cada variante
+const SCORE_WEAK = 10;
+const SCORE_STRONG = 25;
 
 // ── HITBOX ────────────────────────────────────────────────────────────────────
 // Calcula o retângulo da hitbox baseado na posição e direção do player
@@ -79,6 +85,8 @@ export function updatePlayerMovement(
   attack: AttackState,
   enemies: Enemy[],
   dirRef: { current: string }, // ref da direção vinda do ScreenGame
+  hud: HudState,
+  damageNumbers: DamageNumber[],
 ) {
   // ── MOVIMENTO ─────────────────────────────────────────────
   let dx = 0;
@@ -132,13 +140,24 @@ export function updatePlayerMovement(
         enemy.y <= hitbox.y + hitbox.h;
 
       if (hit) {
+        const dmg = PLAYER_CONFIG.damage;
+
         // Causa dano
-        enemy.hp = Math.max(0, enemy.hp - PLAYER_CONFIG.damage);
+        enemy.hp = Math.max(0, enemy.hp - dmg);
 
         // Flash vermelho no inimigo
         enemy.hitFlashTimer = PLAYER_CONFIG.hitFlashDuration;
-
         attack.hitEnemyIds?.add(enemy.id);
+
+        damageNumbers.push({
+          id: dmgNumberId++,
+          x: enemy.x + (Math.random() * 10 - 5),
+          y: enemy.y - 20, // sobe um pouco acima do inimigo
+          value: dmg,
+          timer: DAMAGE_NUMBER_LIFETIME,
+          maxTimer: DAMAGE_NUMBER_LIFETIME,
+          isCrit: false,
+        });
 
         // Knockback — empurra o inimigo na direção do ataque
         const { knockbackForce } = PLAYER_CONFIG;
@@ -165,6 +184,8 @@ export function updatePlayerMovement(
           enemy.animState = "death";
           enemy.frameIndex = 0;
           enemy.frameTimer = 0;
+
+          hud.score += enemy.variant === "strong" ? SCORE_STRONG : SCORE_WEAK;
         }
       }
     }
@@ -178,4 +199,9 @@ export function updatePlayerMovement(
 
   // ── SEPARAÇÃO FÍSICA ──────────────────────────────────────
   separateFromPlayer(pos, enemies);
+
+  for (const dn of damageNumbers) {
+    dn.timer--;
+    dn.y -= 0.4;
+  }
 }

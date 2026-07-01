@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
-import type { AttackState, GameKeys, GameState, HudState } from "../../types/game";
+import type { AttackState, DamageNumber, GameKeys, GameState, HudState } from "../../types/game";
 import { MAP, MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import { createEnemy } from "../../entities/enemies/enemyFactory";
@@ -77,9 +77,9 @@ function spawnEnemies(): Enemy[] {
 
   // Slime fortes - posições e patrulhas fixas
   const strongPatrols: [number, number, number, number][] = [
-    [3, 2, 8, 2],
-    [20, 2, 26, 2],
-    [3, 18, 3, 12],
+    [8, 3, 19, 3],
+    [9, 8, 26, 8],
+    [9, 13, 9, 17],
   ];
 
   for (const [tx, ty, btx, bty] of strongPatrols) {
@@ -107,17 +107,16 @@ function spawnEnemies(): Enemy[] {
 
 function GamePage() {
   const posRef = useRef({ x: START_X, y: START_Y });
-
   const keysRef = useRef<GameKeys>({});
-
   const rafRef = useRef<number>(0);
-
   const hudRef = useRef<HudState>({
     hp: PLAYER_CONFIG.hpMax,
     hpMax: PLAYER_CONFIG.hpMax,
     score: 0,
   });
   const enemiesRef = useRef<Enemy[]>(spawnEnemies());
+
+  const damageNumbersRef = useRef<DamageNumber[]>([]);
 
   const attackRef = useRef<AttackState>({
     active: false,
@@ -157,6 +156,8 @@ function GamePage() {
           attackRef.current,
           enemiesRef.current,
           directionRef,
+          hudRef.current,
+          damageNumbersRef.current
         );
 
         // Atualizar todos os inimigos - IA, movimento e dano
@@ -172,6 +173,8 @@ function GamePage() {
           (e) => !e.deathAnimDone,
         );
 
+        damageNumbersRef.current = damageNumbersRef.current.filter((dn) => dn.timer > 0);
+ 
         // Checar morte do palyer
         if (hudRef.current.hp <= 0) {
           gameStateRef.current = "dead";
@@ -215,6 +218,7 @@ function GamePage() {
         attackRef={attackRef}
         directionRef={directionRef}
         gameStateRef={gameStateRef}
+        damageNumbersRef={damageNumbersRef}
         onRespawn={handleRespawn}
       />
       <ControlGame

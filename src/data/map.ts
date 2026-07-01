@@ -30,10 +30,14 @@ export const MAP: TileMap = [
 export const MAP_W = MAP[0].length * TILE_SIZE;
 export const MAP_H = MAP.length * TILE_SIZE;
 
-const BASE_VISIBLE_TILES_W = 10;
+const VISIBLE_TILES_MOBILE = 10;
+const VISIBLE_TILES_DESKTOP = 18;
 
 export function calcZoom(screenW: number): number {
-  return screenW / (BASE_VISIBLE_TILES_W * TILE_SIZE);
+  const isMobile = screenW < 768;
+  const visibleTiles = isMobile ? VISIBLE_TILES_MOBILE : VISIBLE_TILES_DESKTOP;
+
+  return screenW / (visibleTiles * TILE_SIZE);
 }
 
 export const TILE_COLORS: Record<number, string> = {
