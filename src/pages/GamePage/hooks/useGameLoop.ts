@@ -10,6 +10,8 @@ import type {
 import type { Enemy } from "../../../entities/enemies/enemyTypes";
 import { updatePlayerMovement } from "../../../entities/player/playerMovement";
 import { updateEnemies } from "../../../entities/enemies/enemyAI";
+import type { PlayerAttributes } from "../../../entities/player/playerAttributes";
+import { computeDerivedStats } from "../../../entities/player/playerAttributes";
 
 type Args = {
   posRef: React.RefObject<Position>;
@@ -20,6 +22,7 @@ type Args = {
   hudRef: React.RefObject<HudState>;
   damageNumbersRef: React.RefObject<DamageNumber[]>;
   gameStateRef: React.RefObject<GameState>;
+  attributesRef: React.RefObject<PlayerAttributes>;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -35,12 +38,20 @@ export function useGameLoop({
   hudRef,
   damageNumbersRef,
   gameStateRef,
+  attributesRef,
 }: Args) {
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
     const loop = () => {
       if (gameStateRef.current === "playing") {
+        // Stats derivados dos atributos atuais (FOR/DES/CON/Precisão).
+        // Recalcular por frame é barato (só aritmética) e mantém a HUD e o
+        // combate sempre em dia com o que estiver em attributesRef — inclui
+        // futuras mudanças por level up sem precisar de plumbing extra.
+        const stats = computeDerivedStats(attributesRef.current);
+        hudRef.current.hpMax = stats.hpMax;
+
         // Movimento do player — lógica isolada em playerMovement.ts
         updatePlayerMovement(
           posRef.current,
@@ -50,6 +61,7 @@ export function useGameLoop({
           directionRef,
           hudRef.current,
           damageNumbersRef.current,
+          stats,
         );
 
         // Atualiza todos os inimigos — IA, movimento e dano
@@ -93,5 +105,6 @@ export function useGameLoop({
     hudRef,
     damageNumbersRef,
     gameStateRef,
+    attributesRef,
   ]);
 }

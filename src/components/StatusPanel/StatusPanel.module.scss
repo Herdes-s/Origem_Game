@@ -1,0 +1,97 @@
+// Botão fixo pra abrir/fechar o painel — canto superior central, entre a
+// barra de HP (canto esq.) e o score (canto dir.) desenhados no canvas.
+.toggle_button {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(2px);
+
+  color: #e2e8f0;
+  font: bold 11px monospace;
+  cursor: pointer;
+}
+
+.panel {
+  position: fixed;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+
+  width: min(320px, 90vw);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(2px);
+
+  color: #e2e8f0;
+  font-family: monospace;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tab,
+.tab_active {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  background: transparent;
+  color: #94a3b8;
+  font: bold 11px monospace;
+  cursor: pointer;
+}
+
+.tab_active {
+  background: #166534;
+  border-color: #22c55e;
+  color: #dcfce7;
+}
+
+.stat_list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(71, 85, 105, 0.4);
+  }
+
+  li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  span {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  strong {
+    font-size: 18px;
+    color: #fde68a;
+  }
+
+  small {
+    font-size: 10px;
+    color: #64748b;
+  }
+}

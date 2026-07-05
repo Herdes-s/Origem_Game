@@ -182,12 +182,12 @@ function ScreenGame({
       }
     };
 
-    canvasRef.current?.addEventListener("click", handleCanvasClick);
+    canvas.addEventListener("click", handleCanvasClick);
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
       cancelAnimationFrame(rafRef.current);
-      canvasRef.current?.removeEventListener("click", handleCanvasClick);
+      canvas.removeEventListener("click", handleCanvasClick);
     };
   }, [
     posRef,

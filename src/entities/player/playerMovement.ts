@@ -1,6 +1,7 @@
 import type { GameKeys, Position, AttackState, DamageNumber, HudState } from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
 import { PLAYER_CONFIG } from "./player";
+import type { DerivedPlayerStats } from "./playerAttributes";
 import type { Enemy } from "../enemies/enemyTypes";
 
 // Contador global para IDs únicos dos números de dano
@@ -87,6 +88,7 @@ export function updatePlayerMovement(
   dirRef: { current: string }, // ref da direção vinda do ScreenGame
   hud: HudState,
   damageNumbers: DamageNumber[],
+  stats: DerivedPlayerStats, // dano, velocidade, cooldown etc. já com bônus de atributos
 ) {
   // ── MOVIMENTO ─────────────────────────────────────────────
   let dx = 0;
@@ -103,8 +105,8 @@ export function updatePlayerMovement(
     dy = dy / len;
   }
 
-  const nextX = pos.x + dx * PLAYER_CONFIG.speed;
-  const nextY = pos.y + dy * PLAYER_CONFIG.speed;
+  const nextX = pos.x + dx * stats.speed;
+  const nextY = pos.y + dy * stats.speed;
 
   if (!wouldCollide(nextX, pos.y)) pos.x = nextX;
   if (!wouldCollide(pos.x, nextY)) pos.y = nextY;
@@ -117,7 +119,7 @@ export function updatePlayerMovement(
   if ((keys[" "] || keys["x"]) && attack.cooldown <= 0 && !attack.active) {
     attack.active = true;
     attack.duration = PLAYER_CONFIG.attackDuration;
-    attack.cooldown = PLAYER_CONFIG.attackCooldown;
+    attack.cooldown = stats.attackCooldown;
     attack.direction = dirRef.current as AttackState["direction"];
 
     attack.hitEnemyIds = new Set();
@@ -140,7 +142,11 @@ export function updatePlayerMovement(
         enemy.y <= hitbox.y + hitbox.h;
 
       if (hit) {
-        const dmg = PLAYER_CONFIG.damage;
+        // Rolagem de crítico — chance vem da Precisão (atributo secundário)
+        const isCrit = Math.random() < stats.critChance;
+        const dmg = Math.round(
+          isCrit ? stats.damage * stats.critDamageMultiplier : stats.damage,
+        );
 
         // Causa dano
         enemy.hp = Math.max(0, enemy.hp - dmg);
@@ -156,11 +162,11 @@ export function updatePlayerMovement(
           value: dmg,
           timer: DAMAGE_NUMBER_LIFETIME,
           maxTimer: DAMAGE_NUMBER_LIFETIME,
-          isCrit: false,
+          isCrit,
         });
 
-        // Knockback — empurra o inimigo na direção do ataque
-        const { knockbackForce } = PLAYER_CONFIG;
+        // Knockback — empurra o inimigo na direção do ataque (força vem de FOR)
+        const { knockbackForce } = stats;
         switch (attack.direction) {
           case "right":
             enemy.knockbackX = knockbackForce;

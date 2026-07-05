@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
+import StatusPanel from "../../components/StatusPanel";
 import type {
   AttackState,
   DamageNumber,
@@ -9,7 +10,11 @@ import type {
   HudState,
 } from "../../types/game";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
-import { PLAYER_CONFIG } from "../../entities/player/player";
+import {
+  DEFAULT_ATTRIBUTES,
+  computeDerivedStats,
+  type PlayerAttributes,
+} from "../../entities/player/playerAttributes";
 import {
   spawnEnemies,
   START_X,
@@ -22,14 +27,30 @@ import { useGameLoop } from "./hooks/useGameLoop";
 // GamePage monta o estado do jogo (tudo em refs, sem re-render a 60fps) e
 // pluga as duas peças que rodam em paralelo: o loop de update
 // (useGameLoop) e o loop de desenho (dentro do ScreenGame). Spawn de
-// inimigos vive em entities/enemies/enemySpawner.ts, e input de teclado em
-// hooks/useKeyboardControls.ts.
+// inimigos vive em entities/enemies/enemySpawner.ts, input de teclado em
+// hooks/useKeyboardControls.ts, e os atributos do player (FOR/DES/CON +
+// Precisão) em entities/player/playerAttributes.ts.
 function GamePage() {
+  // Atributos vivem em state — é o que a UI (StatusPanel) lê pra
+  // renderizar. O setter (setAttributes) vai voltar aqui quando o level up
+  // existir; por enquanto os atributos são fixos em DEFAULT_ATTRIBUTES.
+  // O ref abaixo é só um espelho pro game loop (RAF), que não pode reagir
+  // a re-render e precisa ler o valor mais recente a cada frame sem
+  // depender do React.
+  const [attributes] = useState<PlayerAttributes>(DEFAULT_ATTRIBUTES);
+  const attributesRef = useRef<PlayerAttributes>(attributes);
+
+  useEffect(() => {
+    attributesRef.current = attributes;
+  }, [attributes]);
+
+  const startingHpMax = computeDerivedStats(DEFAULT_ATTRIBUTES).hpMax;
+
   const posRef = useRef({ x: START_X, y: START_Y });
   const keysRef = useRef<GameKeys>({});
   const hudRef = useRef<HudState>({
-    hp: PLAYER_CONFIG.hpMax,
-    hpMax: PLAYER_CONFIG.hpMax,
+    hp: startingHpMax,
+    hpMax: startingHpMax,
     score: 0,
   });
   const enemiesRef = useRef<Enemy[]>(spawnEnemies());
@@ -58,11 +79,13 @@ function GamePage() {
     hudRef,
     damageNumbersRef,
     gameStateRef,
+    attributesRef,
   });
 
   const handleRespawn = () => {
+    // Atributos não resetam no respawn — só posição, vida, inimigos e ataque
     posRef.current = { x: START_X, y: START_Y };
-    hudRef.current.hp = PLAYER_CONFIG.hpMax;
+    hudRef.current.hp = computeDerivedStats(attributesRef.current).hpMax;
     enemiesRef.current = spawnEnemies();
     attackRef.current = {
       active: false,
@@ -93,8 +116,10 @@ function GamePage() {
         attackRef={attackRef}
         directionRef={directionRef}
       />
+      <StatusPanel attributes={attributes} />
     </>
   );
 }
 
 export default GamePage;
+
