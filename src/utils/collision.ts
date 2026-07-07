@@ -1,4 +1,5 @@
 import { MAP, TILE_SIZE } from "../data/map";
+import { isTileSolid } from "../data/tiles";
 import type { TileMap } from "../types/game"
 
 export function pixelToTile(pixel: number): number {
@@ -12,7 +13,7 @@ export function isSolid(
 ): boolean {
   const row = map[tileY];
   const tile = row?.[tileX] ?? 1;
-  return tile === 1;
+  return isTileSolid(tile);
 }
 
 const MARGIN = 12;

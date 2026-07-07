@@ -1,4 +1,5 @@
-import { MAP, TILE_COLORS, TILE_SIZE } from "../../../data/map";
+import { MAP, TILE_SIZE } from "../../../data/map";
+import { getTileDefinition } from "../../../data/tiles";
 
 // Desenha o tilemap, pulando (culling) tiles fora da área visível.
 export function renderMap(
@@ -21,7 +22,7 @@ export function renderMap(
 
       if (fora) return;
 
-      ctx.fillStyle = TILE_COLORS[tile];
+      ctx.fillStyle = getTileDefinition(tile).color;
       ctx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
 
       ctx.strokeStyle = "rgba(0,0,0,0.15)";

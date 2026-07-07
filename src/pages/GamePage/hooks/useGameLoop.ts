@@ -12,6 +12,7 @@ import { updatePlayerMovement } from "../../../entities/player/playerMovement";
 import { updateEnemies } from "../../../entities/enemies/enemyAI";
 import type { PlayerAttributes } from "../../../entities/player/playerAttributes";
 import { computeDerivedStats } from "../../../entities/player/playerAttributes";
+import { updateSpawnDens, type SpawnDen } from "../../../entities/enemies/spawnDen";
 
 type Args = {
   posRef: React.RefObject<Position>;
@@ -23,6 +24,7 @@ type Args = {
   damageNumbersRef: React.RefObject<DamageNumber[]>;
   gameStateRef: React.RefObject<GameState>;
   attributesRef: React.RefObject<PlayerAttributes>;
+  densRef: React.RefObject<SpawnDen[]>;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -39,6 +41,7 @@ export function useGameLoop({
   damageNumbersRef,
   gameStateRef,
   attributesRef,
+  densRef,
 }: Args) {
   const rafRef = useRef<number>(0);
 
@@ -71,6 +74,9 @@ export function useGameLoop({
           hudRef.current,
           attackRef,
         );
+
+        // Covis de spawn — nasce um inimigo novo onde o anterior morreu
+        updateSpawnDens(densRef.current, enemiesRef.current);
 
         // Remove inimigos cuja animação de morte já terminou
         enemiesRef.current = enemiesRef.current.filter(
@@ -106,5 +112,6 @@ export function useGameLoop({
     damageNumbersRef,
     gameStateRef,
     attributesRef,
+    densRef,
   ]);
 }

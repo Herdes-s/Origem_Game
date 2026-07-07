@@ -2,6 +2,8 @@ import { MAP, MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
 import type { Enemy } from "./enemyTypes";
 import { createEnemy } from "./enemyFactory";
 import { SLIME_STRONG_CONFIG, SLIME_WEAK_CONFIG } from "./slime/slime";
+import { findTileCoords, TILE } from "../../data/tiles";
+import { createSpawnDen, type SpawnDen } from "./spawnDen";
 
 // Posição inicial do player — centro do mapa. Também é a origem usada pelo
 // raio de exclusão de spawn (inimigos fracos não nascem perto do player).
@@ -101,4 +103,13 @@ export function spawnEnemies(): Enemy[] {
   }
 
   return enemies;
+}
+
+export function spawnDensFromMap(): SpawnDen[] {
+  return findTileCoords(MAP, TILE.SPAWN_CAVE).map(({ tx, ty }) =>
+    createSpawnDen({
+      x: tx * TILE_SIZE + TILE_SIZE / 2,
+      y: ty * TILE_SIZE + TILE_SIZE / 2,
+    }),
+  );
 }

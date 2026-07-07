@@ -61,4 +61,8 @@ export type Enemy = {
   wanderDx?: number;
   wanderDy?: number;
   wanderTimer?: number;
+
+  // Covil de spawn — se esse inimigo nasceu de um covil (TILE.SPAWN_CAVE),
+  // guarda o id do covil pra ele saber quando pode nascer outro no lugar.
+  denId?: number;
 };

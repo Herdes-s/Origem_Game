@@ -16,6 +16,7 @@ import {
   type PlayerAttributes,
 } from "../../entities/player/playerAttributes";
 import {
+  spawnDensFromMap,
   spawnEnemies,
   START_X,
   START_Y,
@@ -23,6 +24,7 @@ import {
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
+import type { SpawnDen } from "../../entities/enemies/spawnDen";
 
 // GamePage monta o estado do jogo (tudo em refs, sem re-render a 60fps) e
 // pluga as duas peças que rodam em paralelo: o loop de update
@@ -54,6 +56,7 @@ function GamePage() {
     score: 0,
   });
   const enemiesRef = useRef<Enemy[]>(spawnEnemies());
+  const densRef = useRef<SpawnDen[]>(spawnDensFromMap());
   const damageNumbersRef = useRef<DamageNumber[]>([]);
 
   const attackRef = useRef<AttackState>({
@@ -80,6 +83,7 @@ function GamePage() {
     damageNumbersRef,
     gameStateRef,
     attributesRef,
+    densRef,
   });
 
   const handleRespawn = () => {
