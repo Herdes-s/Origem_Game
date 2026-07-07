@@ -38,6 +38,7 @@ export function createEnemy(
     damageCooldownTimer: 0,
     behavior,
     color: config.color,
+    xpReward: config.xpReward,
 
     // Animação começa em idle, frame 0
     animState:  "idle",

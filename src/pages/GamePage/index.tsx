@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ControlGame from "../../components/ControlGame";
 import ScreenGame from "../../components/ScreenGame";
 import StatusPanel from "../../components/StatusPanel";
@@ -12,8 +12,10 @@ import type {
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 import {
   DEFAULT_ATTRIBUTES,
+  allocatepoint,
   computeDerivedStats,
   type PlayerAttributes,
+  type PrimaryAttributes,
 } from "../../entities/player/playerAttributes";
 import {
   spawnDensFromMap,
@@ -25,6 +27,11 @@ import {
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
 import type { SpawnDen } from "../../entities/enemies/spawnDen";
+import {
+  DEFAULT_PROGRESS,
+  gainXp,
+  type PlayerProgress,
+} from "../../entities/player/playerProgress";
 
 // GamePage monta o estado do jogo (tudo em refs, sem re-render a 60fps) e
 // pluga as duas peças que rodam em paralelo: o loop de update
@@ -39,7 +46,9 @@ function GamePage() {
   // O ref abaixo é só um espelho pro game loop (RAF), que não pode reagir
   // a re-render e precisa ler o valor mais recente a cada frame sem
   // depender do React.
-  const [attributes] = useState<PlayerAttributes>(DEFAULT_ATTRIBUTES);
+  const [attributes, setAttributes] =
+    useState<PlayerAttributes>(DEFAULT_ATTRIBUTES);
+  const [progress, setProgress] = useState<PlayerProgress>(DEFAULT_PROGRESS);
   const attributesRef = useRef<PlayerAttributes>(attributes);
 
   useEffect(() => {
@@ -73,6 +82,10 @@ function GamePage() {
 
   useKeyboardControls(keysRef);
 
+  const handleXpGained = useCallback((amount: number) => {
+    setProgress((prev) => gainXp(prev, amount));
+  }, []);
+
   useGameLoop({
     posRef,
     keysRef,
@@ -84,7 +97,19 @@ function GamePage() {
     gameStateRef,
     attributesRef,
     densRef,
+    onXpGained: handleXpGained,
   });
+
+  // Gasta 1 ponto de level up num atributo primário — chamado pela UI do
+  // StatusPanel quando o player clica em "+" ao lado de FOR/DES/CON/RES.
+  const handleAllocate = (key: keyof PrimaryAttributes) => {
+    if (progress.unallocatedPoints <= 0) return;
+    setAttributes((prev) => allocatepoint(prev, key));
+    setProgress((prev) => ({
+      ...prev,
+      unallocatedPoints: prev.unallocatedPoints - 1,
+    }));
+  };
 
   const handleRespawn = () => {
     // Atributos não resetam no respawn — só posição, vida, inimigos e ataque
@@ -120,10 +145,13 @@ function GamePage() {
         attackRef={attackRef}
         directionRef={directionRef}
       />
-      <StatusPanel attributes={attributes} />
+      <StatusPanel
+        attributes={attributes}
+        progress={progress}
+        onAllocate={handleAllocate}
+      />
     </>
   );
 }
 
 export default GamePage;
-

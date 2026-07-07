@@ -15,6 +15,7 @@ export type EnemyRaceConfig = {
   contactRadius: number;
   damageCooldown: number;
   color: string;
+  xpReward: number;
 };
 
 export type Enemy = {
@@ -37,6 +38,7 @@ export type Enemy = {
 
   behavior: EnemyBehavior;
   color: string;
+  xpReward: number;
 
   // ANIMAÇÂO
   animState: EnemyAnimState;

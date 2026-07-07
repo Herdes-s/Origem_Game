@@ -7,6 +7,7 @@ export type PrimaryAttributes = {
   for: number; // Força — dano do soco, força do knockback aplicado
   des: number; // Destreza — velocidade de movimento, cooldown de ataque
   con: number; // Constituição — vida máxima
+  res: number; // Resistência — redução do dano recebido
 };
 
 // ── ATRIBUTOS SECUNDÁRIOS ────────────────────────────────────────────────
@@ -23,7 +24,7 @@ export type PlayerAttributes = {
 };
 
 export const DEFAULT_ATTRIBUTES: PlayerAttributes = {
-  primary: { for: 5, des: 5, con: 5 },
+  primary: { for: 5, des: 5, con: 5, res: 5 },
   secondary: { precisao: 5 },
 };
 
@@ -39,6 +40,8 @@ const SCALING = {
 
   hpPerCon: 8, // HP máximo por ponto de CON
 
+  defensePerRes: 0.6, // redução de dano recebido por ponto de RES
+
   critChancePerPrecisao: 0.02, // +2% de chance de crítico por ponto
   critDamageMultiplier: 1.5, // dano crítico = dano normal x1.5
 };
@@ -52,6 +55,7 @@ export type DerivedPlayerStats = {
   damage: number;
   attackCooldown: number;
   knockbackForce: number;
+  defense: number;
   critChance: number; // 0 a 1
   critDamageMultiplier: number;
 };
@@ -62,7 +66,7 @@ export type DerivedPlayerStats = {
 export function computeDerivedStats(
   attributes: PlayerAttributes,
 ): DerivedPlayerStats {
-  const { for: forc, des, con } = attributes.primary;
+  const { for: forc, des, con, res } = attributes.primary;
   const { precisao } = attributes.secondary;
 
   return {
@@ -73,8 +77,25 @@ export function computeDerivedStats(
       MIN_ATTACK_COOLDOWN,
       PLAYER_CONFIG.attackCooldown - des * SCALING.cooldownReductionPerDes,
     ),
-    knockbackForce: PLAYER_CONFIG.knockbackForce + forc * SCALING.knockbackPerFor,
+    knockbackForce:
+      PLAYER_CONFIG.knockbackForce + forc * SCALING.knockbackPerFor,
+    defense: res * SCALING.defensePerRes,
     critChance: Math.min(1, precisao * SCALING.critChancePerPrecisao),
     critDamageMultiplier: SCALING.critDamageMultiplier,
+  };
+}
+
+// Gasta 1 ponto de level up num atributo primário — retorna um objeto novo
+// (não muta), pra combinar direto com setAttributes(prev => ...).
+export function allocatepoint(
+  attributes: PlayerAttributes,
+  key: keyof PrimaryAttributes,
+): PlayerAttributes {
+  return {
+    ...attributes,
+    primary: {
+      ...attributes.primary,
+      [key]: attributes.primary[key] + 1,
+    },
   };
 }

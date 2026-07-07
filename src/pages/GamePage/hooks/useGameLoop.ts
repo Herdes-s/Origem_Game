@@ -25,6 +25,7 @@ type Args = {
   gameStateRef: React.RefObject<GameState>;
   attributesRef: React.RefObject<PlayerAttributes>;
   densRef: React.RefObject<SpawnDen[]>;
+  onXpGained: (amount: number) => void;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -42,6 +43,7 @@ export function useGameLoop({
   gameStateRef,
   attributesRef,
   densRef,
+  onXpGained,
 }: Args) {
   const rafRef = useRef<number>(0);
 
@@ -56,7 +58,7 @@ export function useGameLoop({
         hudRef.current.hpMax = stats.hpMax;
 
         // Movimento do player — lógica isolada em playerMovement.ts
-        updatePlayerMovement(
+        const xpGained = updatePlayerMovement(
           posRef.current,
           keysRef.current,
           attackRef.current,
@@ -67,12 +69,15 @@ export function useGameLoop({
           stats,
         );
 
+        if (xpGained > 0) onXpGained(xpGained);
+
         // Atualiza todos os inimigos — IA, movimento e dano
         updateEnemies(
           enemiesRef.current,
           posRef.current,
           hudRef.current,
           attackRef,
+          stats.defense,
         );
 
         // Covis de spawn — nasce um inimigo novo onde o anterior morreu
@@ -113,5 +118,6 @@ export function useGameLoop({
     gameStateRef,
     attributesRef,
     densRef,
+    onXpGained,
   ]);
 }

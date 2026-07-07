@@ -89,7 +89,8 @@ export function updatePlayerMovement(
   hud: HudState,
   damageNumbers: DamageNumber[],
   stats: DerivedPlayerStats, // dano, velocidade, cooldown etc. já com bônus de atributos
-) {
+): number {
+  let xpGained = 0
   // ── MOVIMENTO ─────────────────────────────────────────────
   let dx = 0;
   let dy = 0;
@@ -192,6 +193,7 @@ export function updatePlayerMovement(
           enemy.frameTimer = 0;
 
           hud.score += enemy.variant === "strong" ? SCORE_STRONG : SCORE_WEAK;
+          xpGained += enemy.xpReward;
         }
       }
     }
@@ -210,4 +212,6 @@ export function updatePlayerMovement(
     dn.timer--;
     dn.y -= 0.4;
   }
+
+  return xpGained;
 }

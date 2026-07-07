@@ -105,6 +105,7 @@ function tryDamagePlayer(
   player: Position,
   hud: HudState,
   attackRef: React.RefObject<AttackState>,
+  defense: number,
 ) {
   if (enemy.damageCooldownTimer > 0) {
     enemy.damageCooldownTimer--;
@@ -112,7 +113,9 @@ function tryDamagePlayer(
   }
 
   if (dist(enemy.x, enemy.y, player.x, player.y) <= enemy.contactRadius) {
-    hud.hp = Math.max(0, hud.hp - enemy.damage);
+    // Defesa (RES) reduz o dano recebido, com piso de 1 — nunca zera de todo
+    const finalDamage = Math.max(1, Math.round(enemy.damage - defense));
+    hud.hp = Math.max(0, hud.hp - finalDamage);
     enemy.damageCooldownTimer = enemy.damageCooldown;
 
     if (attackRef.current) {
@@ -133,6 +136,7 @@ export function updateEnemies(
   player: Position,
   hud: HudState,
   attackRef: React.RefObject<AttackState>,
+  defense: number,
 ) {
   for (const enemy of enemies) {
     if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer--;
@@ -159,7 +163,7 @@ export function updateEnemies(
       if (done) {
         enemy.animState = enemy.behavior === "chase" ? "move" : "idle";
       }
-      tryDamagePlayer(enemy, player, hud, attackRef);
+      tryDamagePlayer(enemy, player, hud, attackRef, defense);
       continue;
     }
 
@@ -183,7 +187,7 @@ export function updateEnemies(
         break;
     }
 
-    tryDamagePlayer(enemy, player, hud, attackRef);
+    tryDamagePlayer(enemy, player, hud, attackRef, defense);
     updateAnimation(enemy);
   }
 }

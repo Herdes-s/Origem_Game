@@ -10,6 +10,7 @@ export const SLIME_WEAK_CONFIG: EnemyRaceConfig = {
   contactRadius: 18,
   damageCooldown: 60,
   color: "#4ade80",
+  xpReward: 8,
 };
 
 export const SLIME_STRONG_CONFIG: EnemyRaceConfig = {
@@ -21,4 +22,5 @@ export const SLIME_STRONG_CONFIG: EnemyRaceConfig = {
   contactRadius: 22,
   damageCooldown: 50,
   color: "#16a34a",
+  xpReward: 8,
 };
