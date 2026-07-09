@@ -10,6 +10,7 @@ import type {
   HudState,
 } from "../../types/game";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
+import type { SpawnDen } from "../../entities/enemies/spawnDen";
 import {
   DEFAULT_ATTRIBUTES,
   allocatepoint,
@@ -18,51 +19,67 @@ import {
   type PrimaryAttributes,
 } from "../../entities/player/playerAttributes";
 import {
-  spawnDensFromMap,
-  spawnEnemies,
-  START_X,
-  START_Y,
-} from "../../entities/enemies/enemySpawner";
-
-import { useKeyboardControls } from "./hooks/useKeyboardControls";
-import { useGameLoop } from "./hooks/useGameLoop";
-import type { SpawnDen } from "../../entities/enemies/spawnDen";
-import {
   DEFAULT_PROGRESS,
   gainXp,
   type PlayerProgress,
 } from "../../entities/player/playerProgress";
+import {
+  spawnEnemies,
+  spawnDensFromMap,
+  START_X,
+  START_Y,
+} from "../../entities/enemies/enemySpawner";
+import { loadGame, saveGame } from "../../entities/save/saveGame";
+
+import { useKeyboardControls } from "./hooks/useKeyboardControls";
+import { useGameLoop } from "./hooks/useGameLoop";
+
+const AUTOSAVE_INTERVAL_MS = 5000;
 
 // GamePage monta o estado do jogo (tudo em refs, sem re-render a 60fps) e
 // pluga as duas peças que rodam em paralelo: o loop de update
 // (useGameLoop) e o loop de desenho (dentro do ScreenGame). Spawn de
 // inimigos vive em entities/enemies/enemySpawner.ts, input de teclado em
-// hooks/useKeyboardControls.ts, e os atributos do player (FOR/DES/CON +
-// Precisão) em entities/player/playerAttributes.ts.
+// hooks/useKeyboardControls.ts, atributos (FOR/DES/CON/RES + Precisão) em
+// entities/player/playerAttributes.ts, e level/XP em
+// entities/player/playerProgress.ts.
 function GamePage() {
-  // Atributos vivem em state — é o que a UI (StatusPanel) lê pra
-  // renderizar. O setter (setAttributes) vai voltar aqui quando o level up
-  // existir; por enquanto os atributos são fixos em DEFAULT_ATTRIBUTES.
-  // O ref abaixo é só um espelho pro game loop (RAF), que não pode reagir
-  // a re-render e precisa ler o valor mais recente a cada frame sem
-  // depender do React.
-  const [attributes, setAttributes] =
-    useState<PlayerAttributes>(DEFAULT_ATTRIBUTES);
-  const [progress, setProgress] = useState<PlayerProgress>(DEFAULT_PROGRESS);
+  // Carrega o save uma vez (localStorage) — se não existir ou estiver
+  // corrompido, loadGame() retorna null e o jogo começa do zero, igual
+  // sempre começou. É uma leitura pura (sempre o mesmo resultado entre
+  // saves), então não precisa de ref — só os useState/useRef abaixo usam
+  // esse valor, e eles só levam em conta o valor inicial mesmo (1ª render).
+  const savedGame = loadGame();
+
+  // Atributos e progresso vivem em state — é o que a UI (StatusPanel) lê
+  // pra renderizar. O ref abaixo é só um espelho pro game loop (RAF), que
+  // não pode reagir a re-render e precisa ler o valor mais recente a cada
+  // frame sem depender do React.
+  const [attributes, setAttributes] = useState<PlayerAttributes>(
+    savedGame?.attributes ?? DEFAULT_ATTRIBUTES,
+  );
+  const [progress, setProgress] = useState<PlayerProgress>(
+    savedGame?.progress ?? DEFAULT_PROGRESS,
+  );
   const attributesRef = useRef<PlayerAttributes>(attributes);
+  const progressRef = useRef<PlayerProgress>(progress);
 
   useEffect(() => {
     attributesRef.current = attributes;
   }, [attributes]);
 
-  const startingHpMax = computeDerivedStats(DEFAULT_ATTRIBUTES).hpMax;
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
 
-  const posRef = useRef({ x: START_X, y: START_Y });
+  const startingHpMax = computeDerivedStats(attributes).hpMax;
+
+  const posRef = useRef(savedGame?.position ?? { x: START_X, y: START_Y });
   const keysRef = useRef<GameKeys>({});
   const hudRef = useRef<HudState>({
-    hp: startingHpMax,
+    hp: savedGame?.hp ?? startingHpMax,
     hpMax: startingHpMax,
-    score: 0,
+    score: savedGame?.score ?? 0,
   });
   const enemiesRef = useRef<Enemy[]>(spawnEnemies());
   const densRef = useRef<SpawnDen[]>(spawnDensFromMap());
@@ -82,6 +99,9 @@ function GamePage() {
 
   useKeyboardControls(keysRef);
 
+  // Identidade estável (useCallback) — evita recriar o RAF loop a cada
+  // render só porque a função mudou de referência. gainXp já processa
+  // level up (pode subir mais de um level de uma vez).
   const handleXpGained = useCallback((amount: number) => {
     setProgress((prev) => gainXp(prev, amount));
   }, []);
@@ -100,6 +120,40 @@ function GamePage() {
     onXpGained: handleXpGained,
   });
 
+  // Monta o snapshot pra salvar, sempre lendo os refs mais recentes (não
+  // captura valor "velho" de closure, mesmo chamado de dentro de um
+  // interval configurado uma vez só no mount)
+  const buildSnapshot = () => ({
+    attributes: attributesRef.current,
+    progress: progressRef.current,
+    position: posRef.current,
+    hp: hudRef.current.hp,
+    score: hudRef.current.score,
+  });
+
+  // Salva na hora quando atributos ou progresso mudam (level up, ponto
+  // alocado) — essas mudanças são raras, então salvar na hora não pesa.
+  useEffect(() => {
+    saveGame(buildSnapshot());
+  }, [attributes, progress]);
+
+  // Posição/HP/score mudam a cada frame dentro de refs (não disparam
+  // re-render), então autosave periódico + um último save ao fechar/trocar
+  // de aba é o jeito de não perder esse progresso.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      saveGame(buildSnapshot());
+    }, AUTOSAVE_INTERVAL_MS);
+
+    const handleBeforeUnload = () => saveGame(buildSnapshot());
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
   // Gasta 1 ponto de level up num atributo primário — chamado pela UI do
   // StatusPanel quando o player clica em "+" ao lado de FOR/DES/CON/RES.
   const handleAllocate = (key: keyof PrimaryAttributes) => {
@@ -112,7 +166,8 @@ function GamePage() {
   };
 
   const handleRespawn = () => {
-    // Atributos não resetam no respawn — só posição, vida, inimigos e ataque
+    // Atributos e progresso não resetam no respawn — só posição, vida,
+    // inimigos e ataque
     posRef.current = { x: START_X, y: START_Y };
     hudRef.current.hp = computeDerivedStats(attributesRef.current).hpMax;
     enemiesRef.current = spawnEnemies();
@@ -125,6 +180,7 @@ function GamePage() {
       hitEnemyIds: new Set(),
     };
     gameStateRef.current = "playing";
+    saveGame(buildSnapshot());
   };
 
   return (
@@ -155,3 +211,4 @@ function GamePage() {
 }
 
 export default GamePage;
+
