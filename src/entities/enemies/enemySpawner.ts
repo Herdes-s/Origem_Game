@@ -14,7 +14,7 @@ export const START_Y =
 
 const SPAWN_MARGIN_TILES = 2;
 const WEAK_SPAWN_COUNT = 6;
-const WEAK_EXCLUDE_RADIUS = 200;
+const WEAK_EXCLUDE_RADIUS = 400;
 
 // Patrulhas fixas dos slimes fortes — [tileX, tileY, patrolToTileX, patrolToTileY]
 const STRONG_PATROLS: [number, number, number, number][] = [

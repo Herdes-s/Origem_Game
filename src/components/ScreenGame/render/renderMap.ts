@@ -8,6 +8,7 @@ export function renderMap(
   camY: number,
   screenW: number,
   screenH: number,
+  textures: Map<number, HTMLImageElement>,
 ) {
   MAP.forEach((row, rowIndex) => {
     row.forEach((tile, colIndex) => {
@@ -22,8 +23,14 @@ export function renderMap(
 
       if (fora) return;
 
-      ctx.fillStyle = getTileDefinition(tile).color;
+      const texture = textures.get(tile);
+
+      if (texture) {
+        ctx.drawImage(texture, drawX, drawY, TILE_SIZE, TILE_SIZE);
+      } else {
+        ctx.fillStyle = getTileDefinition(tile).color;
       ctx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE);
+    }
 
       ctx.strokeStyle = "rgba(0,0,0,0.15)";
       ctx.lineWidth = 0.5;

@@ -1,7 +1,7 @@
 import type { TileMap } from "../types/game";
 import { TILE } from "./tiles";
 
-export const TILE_SIZE = 32;
+export const TILE_SIZE = 64;
 
 export const MAP: TileMap = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],

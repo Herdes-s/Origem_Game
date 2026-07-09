@@ -33,9 +33,9 @@ export const DEFAULT_ATTRIBUTES: PlayerAttributes = {
 // pra recalibrar balanceamento — nada disso está espalhado pelo código.
 const SCALING = {
   damagePerFor: 1.5, // dano do soco por ponto de FOR
-  knockbackPerFor: 0.3, // força de knockback por ponto de FOR
+  knockbackPerFor: 0.6, // força de knockback por ponto de FOR
 
-  speedPerDes: 0.15, // px/frame de velocidade por ponto de DES
+  speedPerDes: 0.3, // px/frame de velocidade por ponto de DES
   cooldownReductionPerDes: 0.4, // frames de cooldown a menos por ponto de DES
 
   hpPerCon: 8, // HP máximo por ponto de CON

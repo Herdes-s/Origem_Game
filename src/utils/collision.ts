@@ -12,11 +12,11 @@ export function isSolid(
   map: TileMap = MAP,
 ): boolean {
   const row = map[tileY];
-  const tile = row?.[tileX] ?? 1;
+  const tile = row?.[tileX];
   return isTileSolid(tile);
 }
 
-const MARGIN = 12;
+const MARGIN = 24;
 
 export function wouldCollide(nextX: number, nextY: number): boolean {
   const left = pixelToTile(nextX - MARGIN);

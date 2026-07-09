@@ -16,6 +16,7 @@ export type TileDefinition = {
   id: number;
   name: string;
   color: string; // placeholder até existir textura de verdade
+  textureSrc?: string; // caminho pra imagem 64×64 do tile — opcional
   solid: boolean; // bloqueia movimento (colisão)?
   spawnPoint?: boolean; // marca um covil de spawn de inimigos
 };
@@ -25,30 +26,35 @@ export const TILE_DEFINITIONS: Record<number, TileDefinition> = {
     id: TILE.FLOOR,
     name: "Chão",
     color: "#1e293b",
+    textureSrc: "/assets/tiles/floor.png",
     solid: false,
   },
   [TILE.WALL]: {
     id: TILE.WALL,
     name: "Parede",
     color: "#475569",
+    textureSrc: "/assets/tiles/wall.png",
     solid: true,
   },
   [TILE.WATER]: {
     id: TILE.WATER,
     name: "Água",
     color: "#1e40af",
+    textureSrc: "/assets/tiles/water.png",
     solid: true, // por enquanto água bloqueia — pode virar "lento" depois
   },
   [TILE.GRASS]: {
     id: TILE.GRASS,
     name: "Grama",
     color: "#166534",
+    textureSrc: "/assets/tiles/grass.png",
     solid: false,
   },
   [TILE.SPAWN_CAVE]: {
     id: TILE.SPAWN_CAVE,
     name: "Covil",
     color: "#7c2d12",
+    textureSrc: "/assets/tiles/spawn_cave.png",
     solid: false,
     spawnPoint: true,
   },
@@ -68,6 +74,20 @@ export function getTileDefinition(tileId: number | undefined): TileDefinition {
 
 export function isTileSolid(tileId: number | undefined): boolean {
   return getTileDefinition(tileId).solid;
+}
+
+// Tamanho nativo das texturas dos tiles — bate com TILE_SIZE (data/map.ts)
+export const TILE_TEXTURE_SIZE = 64;
+
+// Lista {id, src} de todo tile que tem textura — usado pelo loader
+// (useTileTextures) pra saber o que carregar, sem precisar repetir a
+// lista na mão em outro arquivo.
+export function listTileTextures(): { id: number; src: string }[] {
+  return Object.values(TILE_DEFINITIONS)
+    .filter(
+      (def): def is TileDefinition & { textureSrc: string } => !!def.textureSrc,
+    )
+    .map((def) => ({ id: def.id, src: def.textureSrc }));
 }
 
 // Acha todos os tiles de um certo tipo no mapa — usado hoje pra achar

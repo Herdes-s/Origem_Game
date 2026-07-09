@@ -27,6 +27,7 @@ import {
 } from "./render/renderDeathScreen";
 import { renderDebugHitbox } from "./render/renderDebugHitbox";
 import { DEBUG_HITBOX } from "./utils/hitbox";
+import { useTileTextures } from "./hooks/useTileTextures";
 
 // PROPS
 type Props = {
@@ -64,6 +65,7 @@ function ScreenGame({
   const { playerSpriteRef, slimeWeakSpriteRef, slimeStrongSpriteRef } =
     useGameSprites();
   const { flashCanvasRef, flashCtxRef } = useFlashCanvas();
+  const tileTexturesRef = useTileTextures();
   const {
     frameIndexRef,
     attackFrameIndexRef,
@@ -112,7 +114,7 @@ function ScreenGame({
       ctx.scale(ZOOM, ZOOM);
 
       // 1 MAPA
-      renderMap(ctx, camX, camY, SCREEN_W, SCREEN_H);
+      renderMap(ctx, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
 
       // 2 INIMIGOS
       renderEnemies(
@@ -207,6 +209,7 @@ function ScreenGame({
     slimeStrongSpriteRef,
     flashCanvasRef,
     flashCtxRef,
+    tileTexturesRef,
     frameIndexRef,
     attackFrameIndexRef,
     updatePlayerAnimation,

@@ -91,6 +91,7 @@ export function updatePlayerMovement(
   stats: DerivedPlayerStats, // dano, velocidade, cooldown etc. já com bônus de atributos
 ): number {
   let xpGained = 0
+  
   // ── MOVIMENTO ─────────────────────────────────────────────
   let dx = 0;
   let dy = 0;
