@@ -1,8 +1,11 @@
-import type { AttackState, HudState, Position } from "../../types/game";
+import type { AttackState, DamageNumber, HudState, Position } from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
+import { nextDamageNumberId } from "../combat/damageNumberId";
 import { PLAYER_CONFIG } from "../player/player";
 import type { Enemy } from "./enemyTypes";
 import { SLIME_FRAME_SPEED } from "./slime/slimeSprite";
+
+const DAMAGE_NUMBER_LIFETIME = 50;
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
@@ -106,6 +109,7 @@ function tryDamagePlayer(
   hud: HudState,
   attackRef: React.RefObject<AttackState>,
   defense: number,
+  damageNumbers: DamageNumber[],
 ) {
   if (enemy.damageCooldownTimer > 0) {
     enemy.damageCooldownTimer--;
@@ -120,6 +124,17 @@ function tryDamagePlayer(
     const finalDamage = Math.max(1, Math.round(rawDamage - defense));
     hud.hp = Math.max(0, hud.hp - finalDamage);
     enemy.damageCooldownTimer = enemy.damageCooldown;
+
+    damageNumbers.push({
+      id: nextDamageNumberId(),
+      x: player.x + (Math.random() * 10 - 5),
+      y: player.y - 20,
+      value: finalDamage,
+      timer: DAMAGE_NUMBER_LIFETIME,
+      maxTimer: DAMAGE_NUMBER_LIFETIME,
+      isCrit,
+      taken: true,
+    })
 
     if (attackRef.current) {
       attackRef.current.hitFlash = PLAYER_CONFIG.hitFlashDuration;
@@ -140,6 +155,7 @@ export function updateEnemies(
   hud: HudState,
   attackRef: React.RefObject<AttackState>,
   defense: number,
+  damageNumbers: DamageNumber[],
 ) {
   for (const enemy of enemies) {
     if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer--;
@@ -166,7 +182,7 @@ export function updateEnemies(
       if (done) {
         enemy.animState = enemy.behavior === "chase" ? "move" : "idle";
       }
-      tryDamagePlayer(enemy, player, hud, attackRef, defense);
+      tryDamagePlayer(enemy, player, hud, attackRef, defense, damageNumbers);
       continue;
     }
 
@@ -190,7 +206,7 @@ export function updateEnemies(
         break;
     }
 
-    tryDamagePlayer(enemy, player, hud, attackRef, defense);
+    tryDamagePlayer(enemy, player, hud, attackRef, defense, damageNumbers);
     updateAnimation(enemy);
   }
 }

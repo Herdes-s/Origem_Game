@@ -3,9 +3,7 @@ import { wouldCollide } from "../../utils/collision";
 import { PLAYER_CONFIG } from "./player";
 import type { DerivedPlayerStats } from "./playerAttributes";
 import type { Enemy } from "../enemies/enemyTypes";
-
-// Contador global para IDs únicos dos números de dano
-let dmgNumberId = 0;
+import { nextDamageNumberId } from "../combat/damageNumberId";
 
 // Frames que o número de dano fica visível
 const DAMAGE_NUMBER_LIFETIME = 50;
@@ -158,13 +156,14 @@ export function updatePlayerMovement(
         attack.hitEnemyIds?.add(enemy.id);
 
         damageNumbers.push({
-          id: dmgNumberId++,
+          id: nextDamageNumberId(),
           x: enemy.x + (Math.random() * 10 - 5),
           y: enemy.y - 20, // sobe um pouco acima do inimigo
           value: dmg,
           timer: DAMAGE_NUMBER_LIFETIME,
           maxTimer: DAMAGE_NUMBER_LIFETIME,
           isCrit,
+          taken: false,
         });
 
         // Knockback — empurra o inimigo na direção do ataque (força vem de FOR)

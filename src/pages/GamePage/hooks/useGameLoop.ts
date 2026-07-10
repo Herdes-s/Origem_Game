@@ -78,6 +78,7 @@ export function useGameLoop({
           hudRef.current,
           attackRef,
           stats.defense,
+          damageNumbersRef.current,
         );
 
         // Covis de spawn — nasce um inimigo novo onde o anterior morreu

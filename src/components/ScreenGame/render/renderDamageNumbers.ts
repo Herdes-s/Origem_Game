@@ -42,7 +42,7 @@ export function renderDamageNumbers(
     ctx.fillText(label, dnX + 1, dnY + 1);
 
     // Texto principal — dourado normal, vermelho-alaranjado no crítico
-    ctx.fillStyle = dn.isCrit ? "#f97316" : "#fde68a";
+    ctx.fillStyle = dn.isCrit ? (dn.taken ? "#ef4444" : "#f97316") : "#fde68a";
     ctx.fillText(label, dnX, dnY);
 
     ctx.restore();

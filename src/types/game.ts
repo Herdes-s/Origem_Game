@@ -38,4 +38,5 @@ export type DamageNumber = {
   timer: number;
   maxTimer: number;
   isCrit: boolean;
+  taken: boolean;
 }
