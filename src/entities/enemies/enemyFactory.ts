@@ -1,5 +1,6 @@
 import type { Enemy, EnemyRaceConfig, EnemyVariant } from "./enemyTypes";
 import type { Position } from "../../types/game";
+import { rollEnemyAttributes, computeEnemyStats } from "./enemyAttributes";
 
 let nextId = 1;
 
@@ -15,9 +16,15 @@ export function createEnemy(
   patrolA?: Position,
   patrolB?: Position,
 ): Enemy {
-  const hp     = Math.round(randBetween(...config.hpRange));
-  const damage = Math.round(randBetween(...config.damageRange));
-  const speed  = parseFloat(randBetween(...config.speedRange).toFixed(2));
+  // Sorteia os atributos (FOR/DES/CON/RES/Precisão) dentro dos ranges da
+  // raça/variante, e converte pra stats de combate com a mesma fórmula do
+  // player — dois inimigos da mesma variante não saem idênticos.
+  const attributes = rollEnemyAttributes(config.attributeRanges);
+  const stats = computeEnemyStats(attributes);
+
+  const hp = Math.max(1, Math.round(stats.hpMax));
+  const damage = stats.damage;
+  const speed = parseFloat(stats.speed.toFixed(2));
 
   const isStrong = variant === "strong" && patrolA && patrolB;
   const behavior = isStrong ? "patrol" : "wander";
@@ -32,6 +39,10 @@ export function createEnemy(
     hpMax:  hp,
     damage,
     speed,
+    defense: stats.defense,
+    critChance: stats.critChance,
+    critDamageMultiplier: stats.critDamageMultiplier,
+    attributes,
     visionRadius:        config.visionRadius,
     contactRadius:       config.contactRadius,
     damageCooldown:      config.damageCooldown,

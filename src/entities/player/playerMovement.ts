@@ -58,7 +58,7 @@ function getHitbox(pos: Position, dir: string) {
 // Impede player e inimigo de ficarem no mesmo espaço
 // Empurra o inimigo para fora quando há sobreposição
 function separateFromPlayer(pos: Position, enemies: Enemy[]) {
-  const SEPARATION_RADIUS = 14; // px — distância mínima entre centros
+  const SEPARATION_RADIUS = 28; // px — distância mínima entre centros (dobrado com o mundo)
 
   for (const enemy of enemies) {
     if (enemy.hp <= 0) continue;
@@ -89,9 +89,9 @@ export function updatePlayerMovement(
   hud: HudState,
   damageNumbers: DamageNumber[],
   stats: DerivedPlayerStats, // dano, velocidade, cooldown etc. já com bônus de atributos
-): number {
-  let xpGained = 0
-  
+): number { // retorna o XP total ganho nesse frame (0 na maioria das vezes)
+  let xpGained = 0;
+
   // ── MOVIMENTO ─────────────────────────────────────────────
   let dx = 0;
   let dy = 0;
@@ -146,9 +146,9 @@ export function updatePlayerMovement(
       if (hit) {
         // Rolagem de crítico — chance vem da Precisão (atributo secundário)
         const isCrit = Math.random() < stats.critChance;
-        const dmg = Math.round(
-          isCrit ? stats.damage * stats.critDamageMultiplier : stats.damage,
-        );
+        const rawDamage = isCrit ? stats.damage * stats.critDamageMultiplier : stats.damage;
+        // Defesa do inimigo (RES dele) reduz o dano recebido, com piso de 1
+        const dmg = Math.max(1, Math.round(rawDamage - enemy.defense));
 
         // Causa dano
         enemy.hp = Math.max(0, enemy.hp - dmg);

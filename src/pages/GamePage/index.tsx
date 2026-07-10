@@ -13,7 +13,7 @@ import type { Enemy } from "../../entities/enemies/enemyTypes";
 import type { SpawnDen } from "../../entities/enemies/spawnDen";
 import {
   DEFAULT_ATTRIBUTES,
-  allocatepoint,
+  allocatePoint,
   computeDerivedStats,
   type PlayerAttributes,
   type PrimaryAttributes,
@@ -158,7 +158,7 @@ function GamePage() {
   // StatusPanel quando o player clica em "+" ao lado de FOR/DES/CON/RES.
   const handleAllocate = (key: keyof PrimaryAttributes) => {
     if (progress.unallocatedPoints <= 0) return;
-    setAttributes((prev) => allocatepoint(prev, key));
+    setAttributes((prev) => allocatePoint(prev, key));
     setProgress((prev) => ({
       ...prev,
       unallocatedPoints: prev.unallocatedPoints - 1,

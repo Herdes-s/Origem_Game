@@ -113,8 +113,11 @@ function tryDamagePlayer(
   }
 
   if (dist(enemy.x, enemy.y, player.x, player.y) <= enemy.contactRadius) {
-    // Defesa (RES) reduz o dano recebido, com piso de 1 — nunca zera de todo
-    const finalDamage = Math.max(1, Math.round(enemy.damage - defense));
+    // Crítico do inimigo (vem da Precisão dele) + defesa do player (RES)
+    // reduzindo o dano recebido, com piso de 1 — nunca zera de todo
+    const isCrit = Math.random() < enemy.critChance;
+    const rawDamage = isCrit ? enemy.damage * enemy.critDamageMultiplier : enemy.damage;
+    const finalDamage = Math.max(1, Math.round(rawDamage - defense));
     hud.hp = Math.max(0, hud.hp - finalDamage);
     enemy.damageCooldownTimer = enemy.damageCooldown;
 

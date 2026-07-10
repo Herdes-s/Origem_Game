@@ -1,4 +1,5 @@
 import type { Position } from "../../types/game";
+import type { EnemyAttributes, EnemyAttributeRanges } from "./enemyAttributes";
 
 export type EnemyVariant = "weak" | "strong";
 
@@ -8,14 +9,12 @@ export type EnemyAnimState = "idle" | "move" | "attack" | "death";
 
 export type EnemyRaceConfig = {
   race: string;
-  hpRange: [number, number];
-  damageRange: [number, number];
-  speedRange: [number, number];
+  attributeRanges: EnemyAttributeRanges; // FOR/DES/CON/RES/Precisão — hp/dano/velocidade vêm daqui
   visionRadius: number;
   contactRadius: number;
   damageCooldown: number;
   color: string;
-  xpReward: number;
+  xpReward: number; // XP concedido ao player quando esse inimigo morre
 };
 
 export type Enemy = {
@@ -30,6 +29,12 @@ export type Enemy = {
   hpMax: number;
   damage: number;
   speed: number;
+  defense: number; // reduz o dano recebido do player (vem de RES)
+  critChance: number; // 0 a 1 — chance de crítico ao atacar o player
+  critDamageMultiplier: number;
+
+  // Atributos que geraram os stats acima — guardado pra referência/debug
+  attributes: EnemyAttributes;
 
   visionRadius: number;
   contactRadius: number;
