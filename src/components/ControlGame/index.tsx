@@ -1,10 +1,8 @@
-import type { GameKeys, AttackState } from "../../types/game";
+import type { GameKeys } from "../../types/game";
 import styles from "./ControlGame.module.scss";
 
 type Props = {
-  keysRef:      React.RefObject<GameKeys>;
-  attackRef:    React.RefObject<AttackState>;
-  directionRef: React.RefObject<string>;
+  keysRef: React.RefObject<GameKeys>;
 };
 
 const DIRECTIONS: { label: string; key: string }[] = [
@@ -14,21 +12,15 @@ const DIRECTIONS: { label: string; key: string }[] = [
   { label: "▶", key: "ArrowRight" },
 ];
 
-function ControlGame({ keysRef, attackRef, directionRef }: Props) {
+// Tecla que o teclado usa pra atacar (ver playerMovement.ts) — o botão
+// mobile aciona a MESMA tecla via keysRef em vez de mexer no attackRef
+// direto, assim os dois caminhos passam pela mesma lógica (respeitando o
+// cooldown derivado de DES) em vez de duplicar valores fixos aqui.
+const ATTACK_KEY = " ";
+
+function ControlGame({ keysRef }: Props) {
   const handlePress   = (key: string) => { keysRef.current[key] = true; };
   const handleRelease = (key: string) => { keysRef.current[key] = false; };
-
-  // Botão de ataque — aciona diretamente o attackRef
-  const handleAttackPress = () => {
-    const attack = attackRef.current;
-    if (attack.cooldown <= 0 && !attack.active) {
-      attack.active    = true;
-      attack.duration  = 8;
-      attack.cooldown  = 25;
-      attack.direction = directionRef.current as AttackState["direction"];
-      attack.hitEnemyIds = new Set();
-    }
-  };
 
   return (
     <div className={styles.controls_wrapper}>
@@ -51,10 +43,11 @@ function ControlGame({ keysRef, attackRef, directionRef }: Props) {
       <div className={styles.action_buttons}>
         <button
           className={styles.attack_btn}
-          onPointerDown={handleAttackPress}
-          onPointerUp={() => {}}
+          onPointerDown={() => handlePress(ATTACK_KEY)}
+          onPointerUp={() => handleRelease(ATTACK_KEY)}
+          onPointerLeave={() => handleRelease(ATTACK_KEY)}
         >
-          ⚔️
+          👊
         </button>
       </div>
     </div>

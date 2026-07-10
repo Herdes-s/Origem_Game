@@ -196,11 +196,7 @@ function GamePage() {
         damageNumbersRef={damageNumbersRef}
         onRespawn={handleRespawn}
       />
-      <ControlGame
-        keysRef={keysRef}
-        attackRef={attackRef}
-        directionRef={directionRef}
-      />
+      <ControlGame keysRef={keysRef} />
       <StatusPanel
         attributes={attributes}
         progress={progress}
@@ -211,4 +207,3 @@ function GamePage() {
 }
 
 export default GamePage;
-

@@ -31,7 +31,7 @@ export const MAP: TileMap = [
 export const MAP_W = MAP[0].length * TILE_SIZE;
 export const MAP_H = MAP.length * TILE_SIZE;
 
-const VISIBLE_TILES_MOBILE = 10;
+const VISIBLE_TILES_MOBILE = 5;
 const VISIBLE_TILES_DESKTOP = 18;
 
 export function calcZoom(screenW: number): number {
