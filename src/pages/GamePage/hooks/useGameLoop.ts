@@ -13,6 +13,7 @@ import { updateEnemies } from "../../../entities/enemies/enemyAI";
 import type { PlayerAttributes } from "../../../entities/player/playerAttributes";
 import { computeDerivedStats } from "../../../entities/player/playerAttributes";
 import { updateSpawnDens, type SpawnDen } from "../../../entities/enemies/spawnDen";
+import { playPlayerDeath } from "../../../entities/audio/soundEngine";
 
 type Args = {
   posRef: React.RefObject<Position>;
@@ -97,6 +98,7 @@ export function useGameLoop({
         // Checa morte do player
         if (hudRef.current.hp <= 0) {
           gameStateRef.current = "dead";
+          playPlayerDeath();
         }
       }
 

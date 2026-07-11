@@ -4,6 +4,7 @@ import { PLAYER_CONFIG } from "./player";
 import type { DerivedPlayerStats } from "./playerAttributes";
 import type { Enemy } from "../enemies/enemyTypes";
 import { nextDamageNumberId } from "../combat/damageNumberId";
+import { playCrit, playEnemyDeath, playHit } from "../audio/soundEngine";
 
 // Frames que o número de dano fica visível
 const DAMAGE_NUMBER_LIFETIME = 50;
@@ -148,6 +149,12 @@ export function updatePlayerMovement(
         // Defesa do inimigo (RES dele) reduz o dano recebido, com piso de 1
         const dmg = Math.max(1, Math.round(rawDamage - enemy.defense));
 
+        if (isCrit) {
+          playCrit(enemy.race);
+        } else {
+          playHit(enemy.race);
+        }
+
         // Causa dano
         enemy.hp = Math.max(0, enemy.hp - dmg);
 
@@ -191,6 +198,8 @@ export function updatePlayerMovement(
           enemy.animState = "death";
           enemy.frameIndex = 0;
           enemy.frameTimer = 0;
+
+          playEnemyDeath(enemy.race);
 
           hud.score += enemy.variant === "strong" ? SCORE_STRONG : SCORE_WEAK;
           xpGained += enemy.xpReward;

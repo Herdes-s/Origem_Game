@@ -33,6 +33,7 @@ import { loadGame, saveGame } from "../../entities/save/saveGame";
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
+import { playLevelUp } from "../../entities/audio/soundEngine";
 
 const AUTOSAVE_INTERVAL_MS = 5000;
 
@@ -103,7 +104,11 @@ function GamePage() {
   // render só porque a função mudou de referência. gainXp já processa
   // level up (pode subir mais de um level de uma vez).
   const handleXpGained = useCallback((amount: number) => {
-    setProgress((prev) => gainXp(prev, amount));
+    setProgress((prev) => {
+      const next = gainXp(prev, amount);
+      if (next.level > prev.level) playLevelUp();
+      return next;
+    });
   }, []);
 
   useGameLoop({

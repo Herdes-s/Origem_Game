@@ -1,5 +1,6 @@
 import type { AttackState, DamageNumber, HudState, Position } from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
+import { playHurt } from "../audio/soundEngine";
 import { nextDamageNumberId } from "../combat/damageNumberId";
 import { PLAYER_CONFIG } from "../player/player";
 import type { Enemy } from "./enemyTypes";
@@ -124,6 +125,7 @@ function tryDamagePlayer(
     const finalDamage = Math.max(1, Math.round(rawDamage - defense));
     hud.hp = Math.max(0, hud.hp - finalDamage);
     enemy.damageCooldownTimer = enemy.damageCooldown;
+    playHurt();
 
     damageNumbers.push({
       id: nextDamageNumberId(),

@@ -1,0 +1,18 @@
+// Posicionado logo à direita do botão "☰ Status" (que fica centralizado
+// no topo) — mesmo estilo visual, mesma altura.
+.mute_button {
+  position: fixed;
+  top: 12px;
+  left: calc(50% + 78px);
+  z-index: 20;
+
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(2px);
+
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
