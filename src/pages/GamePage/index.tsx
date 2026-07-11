@@ -34,6 +34,7 @@ import { loadGame, saveGame } from "../../entities/save/saveGame";
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
 import { playLevelUp } from "../../entities/audio/soundEngine";
+import MuteButton from "../../components/MuteButton";
 
 const AUTOSAVE_INTERVAL_MS = 5000;
 
@@ -207,6 +208,7 @@ function GamePage() {
         progress={progress}
         onAllocate={handleAllocate}
       />
+      <MuteButton />
     </>
   );
 }
