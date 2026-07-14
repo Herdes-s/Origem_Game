@@ -95,6 +95,7 @@ function playTone({ type = "square", freq, freqTo, duration, volume = 0.25 }: To
 // aceitam `race` e aplicam esse multiplicador de pitch automaticamente.
 const RACE_PITCH: Record<string, number> = {
   slime: 1,
+  goblin: 1.15,
 };
 
 function pitchFor(race?: string): number {

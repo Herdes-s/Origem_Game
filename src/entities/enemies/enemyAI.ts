@@ -1,12 +1,22 @@
 import type { AttackState, DamageNumber, HudState, Position } from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
-import { playHurt } from "../audio/soundEngine";
-import { nextDamageNumberId } from "../combat/damageNumberId";
 import { PLAYER_CONFIG } from "../player/player";
 import type { Enemy } from "./enemyTypes";
 import { SLIME_FRAME_SPEED } from "./slime/slimeSprite";
+import { GOBLIN_FRAME_SPEED } from "./goblin/goblinSprite";
+import { nextDamageNumberId } from "../combat/damageNumberId";
+import { playHurt } from "../audio/soundEngine";
 
+// Frames que o número de dano fica visível — mesmo valor de playerMovement.ts
 const DAMAGE_NUMBER_LIFETIME = 50;
+
+// Velocidade de animação por raça — cada raça tem sua própria tabela de
+// frame speed (slime tem idle/move/attack/death, goblin idem). Adicionar
+// uma raça nova é só adicionar uma entrada aqui.
+const FRAME_SPEED_BY_RACE: Record<string, Record<string, number>> = {
+  slime: SLIME_FRAME_SPEED,
+  goblin: GOBLIN_FRAME_SPEED,
+};
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
@@ -20,6 +30,16 @@ function normalize(dx: number, dy: number): [number, number] {
 
 function moveEnemy(enemy: Enemy, dx: number, dy: number) {
   const [ndx, ndy] = normalize(dx, dy);
+
+  // Direção que o sprite encara — só visível pra raças "directional"
+  // (slime ignora, é "omni"), mas não custa nada manter sempre atualizado
+  if (ndx !== 0 || ndy !== 0) {
+    enemy.direction =
+      Math.abs(ndx) > Math.abs(ndy)
+        ? ndx > 0 ? "right" : "left"
+        : ndy > 0 ? "down" : "up";
+  }
+
   const nextX = enemy.x + ndx * enemy.speed;
   const nextY = enemy.y + ndy * enemy.speed;
 
@@ -48,7 +68,7 @@ function apllyKnockback(enemy: Enemy) {
 
 // ANIMAÇÂO
 function updateAnimation(enemy: Enemy) {
-  const speed = SLIME_FRAME_SPEED[enemy.animState] ?? 12;
+  const speed = FRAME_SPEED_BY_RACE[enemy.race]?.[enemy.animState] ?? 12;
   const count = 4;
 
   enemy.frameTimer++;
@@ -130,13 +150,13 @@ function tryDamagePlayer(
     damageNumbers.push({
       id: nextDamageNumberId(),
       x: player.x + (Math.random() * 10 - 5),
-      y: player.y - 20,
+      y: player.y - 20, // sobe um pouco acima do player
       value: finalDamage,
       timer: DAMAGE_NUMBER_LIFETIME,
       maxTimer: DAMAGE_NUMBER_LIFETIME,
       isCrit,
       taken: true,
-    })
+    });
 
     if (attackRef.current) {
       attackRef.current.hitFlash = PLAYER_CONFIG.hitFlashDuration;

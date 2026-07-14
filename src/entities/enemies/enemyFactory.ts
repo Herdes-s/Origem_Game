@@ -55,6 +55,7 @@ export function createEnemy(
     animState:  "idle",
     frameIndex: 0,
     frameTimer: 0,
+    direction: "down",
 
     hitFlashTimer: 0,
     knockbackX: 0,

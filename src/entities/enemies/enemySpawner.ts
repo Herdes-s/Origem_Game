@@ -1,8 +1,9 @@
 import { MAP, MAP_H, MAP_W, TILE_SIZE } from "../../data/map";
+import { findTileCoords, isTileSolid, TILE } from "../../data/tiles";
 import type { Enemy } from "./enemyTypes";
 import { createEnemy } from "./enemyFactory";
 import { SLIME_STRONG_CONFIG, SLIME_WEAK_CONFIG } from "./slime/slime";
-import { findTileCoords, TILE } from "../../data/tiles";
+import { GOBLIN_STRONG_CONFIG, GOBLIN_WEAK_CONFIG } from "./goblin/goblin";
 import { createSpawnDen, type SpawnDen } from "./spawnDen";
 
 // Posição inicial do player — centro do mapa. Também é a origem usada pelo
@@ -14,7 +15,8 @@ export const START_Y =
 
 const SPAWN_MARGIN_TILES = 2;
 const WEAK_SPAWN_COUNT = 6;
-const WEAK_EXCLUDE_RADIUS = 400;
+const WEAK_EXCLUDE_RADIUS = 400; // dobrado com o mundo (era 200 pra TILE_SIZE=32)
+const GOBLIN_WEAK_SPAWN_COUNT = 3;
 
 // Patrulhas fixas dos slimes fortes — [tileX, tileY, patrolToTileX, patrolToTileY]
 const STRONG_PATROLS: [number, number, number, number][] = [
@@ -23,13 +25,18 @@ const STRONG_PATROLS: [number, number, number, number][] = [
   [9, 13, 9, 17],
 ];
 
+// Patrulha do goblin forte — mesma faixa aberta dos covis (linha 19),
+// espaçada dos dois covis (colunas 5 e 24)
+const GOBLIN_STRONG_PATROLS: [number, number, number, number][] = [
+  [13, 19, 19, 19],
+];
+
 function isSafeSpawnTile(tileX: number, tileY: number): boolean {
   for (let dy = -SPAWN_MARGIN_TILES; dy <= SPAWN_MARGIN_TILES; dy++) {
     for (let dx = -SPAWN_MARGIN_TILES; dx <= SPAWN_MARGIN_TILES; dx++) {
       const row = MAP[tileY + dy];
       if (!row) return false;
-      const tile = row[tileX + dx];
-      if (tile === undefined || tile === 1) return false;
+      if (isTileSolid(row[tileX + dx])) return false;
     }
   }
   return true;
@@ -67,9 +74,26 @@ function randomSafeTile(
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-// Cria a leva de inimigos de uma partida. Hoje só existe uma configuração
-// (slime weak/strong) — isolar essa função do GamePage é o que permite,
-// na v0.2, plugar goblins e um sistema de fases aqui sem tocar no resto.
+function spawnPatrolEnemies(
+  enemies: Enemy[],
+  config: Parameters<typeof createEnemy>[0],
+  patrols: [number, number, number, number][],
+) {
+  for (const [tx, ty, btx, bty] of patrols) {
+    if (!isSafeSpawnTile(tx, ty) || !isSafeSpawnTile(btx, bty)) continue;
+
+    const x = tx * TILE_SIZE + TILE_SIZE / 2;
+    const y = ty * TILE_SIZE + TILE_SIZE / 2;
+    const bx = btx * TILE_SIZE + TILE_SIZE / 2;
+    const by = bty * TILE_SIZE + TILE_SIZE / 2;
+
+    enemies.push(createEnemy(config, "strong", x, y, { x, y }, { x: bx, y: by }));
+  }
+}
+
+// Cria a leva de inimigos de uma partida — hoje slime + goblin. Isolar
+// essa função do GamePage é o que permite plugar uma raça nova ou um
+// sistema de fases aqui sem tocar no resto.
 export function spawnEnemies(): Enemy[] {
   const enemies: Enemy[] = [];
   const safeTiles = getSafeTiles();
@@ -81,30 +105,24 @@ export function spawnEnemies(): Enemy[] {
     enemies.push(createEnemy(SLIME_WEAK_CONFIG, "weak", tile.x, tile.y));
   }
 
-  // Slime forte — posições e patrulhas fixas, verificadas manualmente
-  for (const [tx, ty, btx, bty] of STRONG_PATROLS) {
-    if (!isSafeSpawnTile(tx, ty) || !isSafeSpawnTile(btx, bty)) continue;
-
-    const x = tx * TILE_SIZE + TILE_SIZE / 2;
-    const y = ty * TILE_SIZE + TILE_SIZE / 2;
-    const bx = btx * TILE_SIZE + TILE_SIZE / 2;
-    const by = bty * TILE_SIZE + TILE_SIZE / 2;
-
-    enemies.push(
-      createEnemy(
-        SLIME_STRONG_CONFIG,
-        "strong",
-        x,
-        y,
-        { x, y },
-        { x: bx, y: by },
-      ),
-    );
+  // Goblin fraco — mesma lógica, raça diferente
+  for (let i = 0; i < GOBLIN_WEAK_SPAWN_COUNT; i++) {
+    const tile = randomSafeTile(safeTiles);
+    if (!tile) continue;
+    enemies.push(createEnemy(GOBLIN_WEAK_CONFIG, "weak", tile.x, tile.y));
   }
+
+  // Slime forte e goblin forte — posições e patrulhas fixas, verificadas
+  // manualmente
+  spawnPatrolEnemies(enemies, SLIME_STRONG_CONFIG, STRONG_PATROLS);
+  spawnPatrolEnemies(enemies, GOBLIN_STRONG_CONFIG, GOBLIN_STRONG_PATROLS);
 
   return enemies;
 }
 
+// Cria um covil pra cada tile TILE.SPAWN_CAVE encontrado no mapa. Chamado
+// uma vez ao montar o GamePage — os covis são fixos no mapa, diferente dos
+// inimigos, que vêm e vão.
 export function spawnDensFromMap(): SpawnDen[] {
   return findTileCoords(MAP, TILE.SPAWN_CAVE).map(({ tx, ty }) =>
     createSpawnDen({

@@ -14,6 +14,7 @@ import type { Enemy } from "../../entities/enemies/enemyTypes";
 import { useScreenSize } from "./hooks/useScreenSize";
 import { useGameSprites } from "./hooks/useGameSprites";
 import { useFlashCanvas } from "./hooks/useFlashCanvas";
+import { useTileTextures } from "./hooks/useTileTextures";
 import { usePlayerAnimation } from "./animation/usePlayerAnimation";
 
 import { renderMap } from "./render/renderMap";
@@ -27,7 +28,6 @@ import {
 } from "./render/renderDeathScreen";
 import { renderDebugHitbox } from "./render/renderDebugHitbox";
 import { DEBUG_HITBOX } from "./utils/hitbox";
-import { useTileTextures } from "./hooks/useTileTextures";
 
 // PROPS
 type Props = {
@@ -62,7 +62,7 @@ function ScreenGame({
 
   const { screenW, screenH, screenWRef, screenHRef, zoomRef } =
     useScreenSize(canvasRef);
-  const { playerSpriteRef, slimeWeakSpriteRef, slimeStrongSpriteRef } =
+  const { playerSpriteRef, slimeWeakSpriteRef, slimeStrongSpriteRef, goblinSpriteRef } =
     useGameSprites();
   const { flashCanvasRef, flashCtxRef } = useFlashCanvas();
   const tileTexturesRef = useTileTextures();
@@ -124,7 +124,11 @@ function ScreenGame({
         camY,
         SCREEN_W,
         SCREEN_H,
-        { weak: slimeWeakSpriteRef.current, strong: slimeStrongSpriteRef.current },
+        {
+          slimeWeak: slimeWeakSpriteRef.current,
+          slimeStrong: slimeStrongSpriteRef.current,
+          goblin: goblinSpriteRef.current,
+        },
         flashCanvasRef.current,
         flashCtxRef.current,
       );
@@ -207,6 +211,7 @@ function ScreenGame({
     playerSpriteRef,
     slimeWeakSpriteRef,
     slimeStrongSpriteRef,
+    goblinSpriteRef,
     flashCanvasRef,
     flashCtxRef,
     tileTexturesRef,

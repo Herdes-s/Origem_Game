@@ -1,4 +1,4 @@
-import type { Position } from "../../types/game";
+import type { Direction, Position } from "../../types/game";
 import type { EnemyAttributes, EnemyAttributeRanges } from "./enemyAttributes";
 
 export type EnemyVariant = "weak" | "strong";
@@ -7,8 +7,14 @@ export type EnemyBehavior = "patrol" | "wander" | "chase";
 
 export type EnemyAnimState = "idle" | "move" | "attack" | "death";
 
+// "omni" = uma visão só, igual pra qualquer direção (caso do slime — é um
+// blob, não tem "lado"). "directional" = sprite com frente/costas/lados
+// de verdade, como o goblin (e o player).
+export type EnemySpriteStyle = "omni" | "directional";
+
 export type EnemyRaceConfig = {
   race: string;
+  spriteStyle: EnemySpriteStyle;
   attributeRanges: EnemyAttributeRanges; // FOR/DES/CON/RES/Precisão — hp/dano/velocidade vêm daqui
   visionRadius: number;
   contactRadius: number;
@@ -49,6 +55,10 @@ export type Enemy = {
   animState: EnemyAnimState;
   frameIndex: number;
   frameTimer: number;
+
+  // Direção que o inimigo está encarando — só importa pra raças com
+  // spriteStyle "directional" (slime ignora, ele é "omni")
+  direction: Direction;
 
   // Flash vermelho ao receber dano
   hitFlashTimer: number;

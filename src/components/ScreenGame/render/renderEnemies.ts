@@ -3,14 +3,62 @@ import {
   SLIME_ANIMATION_ROW,
   SLIME_SPRITE,
 } from "../../../entities/enemies/slime/slimeSprite";
+import {
+  GOBLIN_SPRITE,
+  GOBLIN_DIRECTION_ROW,
+  GOBLIN_ATTACK_ROW,
+} from "../../../entities/enemies/goblin/goblinSprite";
 import { PLAYER_CONFIG } from "../../../entities/player/player";
 import { getHpColor } from "../utils/canvasHelpers";
 import { drawSpriteWithHitFlash } from "../utils/hitFlash";
 
 type EnemySprites = {
-  weak: HTMLImageElement | null;
-  strong: HTMLImageElement | null;
+  slimeWeak: HTMLImageElement | null;
+  slimeStrong: HTMLImageElement | null;
+  goblin: HTMLImageElement | null;
 };
+
+type SpriteFrame = {
+  img: HTMLImageElement | null;
+  frameW: number;
+  frameH: number;
+  srcX: number;
+  srcY: number;
+};
+
+// Resolve qual spritesheet/frame usar pra um inimigo — depende do
+// spriteStyle da raça: "omni" (slime, uma visão só, linha por animState)
+// ou "directional" (goblin, frente/costas/lados de verdade, linha por
+// direção + animState, igual ao player).
+function resolveSpriteFrame(enemy: Enemy, sprites: EnemySprites): SpriteFrame {
+  if (enemy.race === "goblin") {
+    const row =
+      enemy.animState === "attack"
+        ? GOBLIN_ATTACK_ROW[enemy.direction]
+        : GOBLIN_DIRECTION_ROW[enemy.direction];
+
+    return {
+      img: sprites.goblin,
+      frameW: GOBLIN_SPRITE.frameW,
+      frameH: GOBLIN_SPRITE.frameH,
+      srcX: enemy.frameIndex * GOBLIN_SPRITE.frameW,
+      srcY: row * GOBLIN_SPRITE.frameH,
+    };
+  }
+
+  // slime — e qualquer raça "omni" futura que ainda não tenha um caso
+  // próprio aqui cai nesse fallback (spritesheet do slime fraco)
+  const spriteConfig = enemy.variant === "strong" ? SLIME_SPRITE.strong : SLIME_SPRITE.weak;
+  const img = enemy.variant === "strong" ? sprites.slimeStrong : sprites.slimeWeak;
+
+  return {
+    img,
+    frameW: spriteConfig.frameW,
+    frameH: spriteConfig.frameH,
+    srcX: enemy.frameIndex * spriteConfig.frameW,
+    srcY: SLIME_ANIMATION_ROW[enemy.animState] * spriteConfig.frameH,
+  };
+}
 
 // Desenha todos os inimigos: sprite (ou fallback em círculo), flash de dano,
 // fade na morte, barra de HP e label com o nome da raça.
@@ -32,16 +80,14 @@ export function renderEnemies(
     // Culling — pula inimigos fora da tela
     if (ex < -64 || ex > screenW + 64 || ey < -64 || ey > screenH + 64) continue;
 
-    const spriteConfig =
-      enemy.variant === "strong" ? SLIME_SPRITE.strong : SLIME_SPRITE.weak;
-    const spriteImg =
-      enemy.variant === "strong" ? sprites.strong : sprites.weak;
-
-    const srcX = enemy.frameIndex * spriteConfig.frameW;
-    const srcY = SLIME_ANIMATION_ROW[enemy.animState] * spriteConfig.frameH;
+    const { img: spriteImg, frameW, frameH, srcX, srcY } = resolveSpriteFrame(enemy, sprites);
 
     if (spriteImg) {
       if (enemy.hp <= 0) {
+        // Morte: fade de alpha no frame atual. O slime tem uma linha de
+        // morte própria (já embutida no srcY acima); o goblin não tem
+        // arte de morte dedicada — o frame de walk atual só continua
+        // ciclando enquanto esvai, sem precisar de arte extra.
         const alpha = Math.max(0, 1 - enemy.frameIndex / 4);
         ctx.save();
         ctx.globalAlpha = alpha;
@@ -49,12 +95,12 @@ export function renderEnemies(
           spriteImg,
           srcX,
           srcY,
-          spriteConfig.frameW,
-          spriteConfig.frameH,
-          ex - spriteConfig.frameW / 2,
-          ey - spriteConfig.frameH / 2,
-          spriteConfig.frameW,
-          spriteConfig.frameH,
+          frameW,
+          frameH,
+          ex - frameW / 2,
+          ey - frameH / 2,
+          frameW,
+          frameH,
         );
         ctx.restore();
         continue;
@@ -68,10 +114,10 @@ export function renderEnemies(
           spriteImg,
           srcX,
           srcY,
-          spriteConfig.frameW,
-          spriteConfig.frameH,
-          ex - spriteConfig.frameW / 2,
-          ey - spriteConfig.frameH / 2,
+          frameW,
+          frameH,
+          ex - frameW / 2,
+          ey - frameH / 2,
           (enemy.hitFlashTimer / PLAYER_CONFIG.hitFlashDuration) * 0.9,
         );
       } else {
@@ -79,12 +125,12 @@ export function renderEnemies(
           spriteImg,
           srcX,
           srcY,
-          spriteConfig.frameW,
-          spriteConfig.frameH,
-          ex - spriteConfig.frameW / 2,
-          ey - spriteConfig.frameH / 2,
-          spriteConfig.frameW,
-          spriteConfig.frameH,
+          frameW,
+          frameH,
+          ex - frameW / 2,
+          ey - frameH / 2,
+          frameW,
+          frameH,
         );
       }
     } else {
@@ -110,7 +156,7 @@ export function renderEnemies(
     const barW = 40;
     const barH = 4;
     const barX = ex - barW / 2;
-    const barY = ey - spriteConfig.frameH / 2 - 8;
+    const barY = ey - frameH / 2 - 8;
     const hpPct = enemy.hp / enemy.hpMax;
 
     ctx.fillStyle = "#1e293b";

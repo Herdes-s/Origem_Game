@@ -10,6 +10,7 @@ import type { EnemyRaceConfig } from "../enemyTypes";
 // dimensões novas.
 export const SLIME_WEAK_CONFIG: EnemyRaceConfig = {
   race: "slime",
+  spriteStyle: "omni",
   attributeRanges: {
     for: { min: 2, max: 4 },       // dano ~3-6
     des: { min: 5, max: 8 },       // velocidade ~1.5-2.4
@@ -26,6 +27,7 @@ export const SLIME_WEAK_CONFIG: EnemyRaceConfig = {
 
 export const SLIME_STRONG_CONFIG: EnemyRaceConfig = {
   race: "slime",
+  spriteStyle: "omni",
   attributeRanges: {
     for: { min: 5, max: 8 },       // dano ~7.5-12
     des: { min: 3, max: 6 },       // velocidade ~0.9-1.8 (mais lento que o fraco)
