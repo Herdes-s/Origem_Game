@@ -1,46 +1,36 @@
 import { useEffect, useRef } from "react";
-import { PLAYER_SPRITE } from "../../../entities/player/playerSprite";
-import { SLIME_SPRITE } from "../../../entities/enemies/slime/slimeSprite";
-import { GOBLIN_SPRITE } from "../../../entities/enemies/goblin/goblinSprite";
+import { PLAYER_ATTACK_SPRITE, PLAYER_WALK_SPRITE } from "../../../entities/player/playerSprite";
+import { SLIME_STRONG_ATTACK_SPRITE, SLIME_STRONG_DEATH_SPRITE, SLIME_STRONG_WALK_SPRITE, SLIME_WEAK_ATTACK_SPRITE, SLIME_WEAK_DEATH_SPRITE, SLIME_WEAK_WALK_SPRITE } from "../../../entities/enemies/slime/slimeSprite";
+import { GOBLIN_ATTACK_SPRITE, GOBLIN_DEATH_SPRITE, GOBLIN_WALK_SPRITE } from "../../../entities/enemies/goblin/goblinSprite";
 
-// Carrega as spritesheets uma vez e expõe como refs (sem causar re-render
-// quando terminam de carregar — o game loop lê o ref a cada frame).
+const SPRITE_SOURCES: Record<string, string> = {
+  player_walk: PLAYER_WALK_SPRITE.src,
+  player_attack: PLAYER_ATTACK_SPRITE.src,
+
+  slime_weak_walk: SLIME_WEAK_WALK_SPRITE.src,
+  slime_weak_attack: SLIME_WEAK_ATTACK_SPRITE.src,
+  slime_weak_death: SLIME_WEAK_DEATH_SPRITE.src,
+  slime_strong_walk: SLIME_STRONG_WALK_SPRITE.src,
+  slime_strong_attack: SLIME_STRONG_ATTACK_SPRITE.src,
+  slime_strong_death: SLIME_STRONG_DEATH_SPRITE.src,
+
+  goblin_walk: GOBLIN_WALK_SPRITE.src,
+  goblin_attack: GOBLIN_ATTACK_SPRITE.src,
+  goblin_death: GOBLIN_DEATH_SPRITE.src,
+}
+
 export function useGameSprites() {
-  const playerSpriteRef = useRef<HTMLImageElement | null>(null);
-  const slimeWeakSpriteRef = useRef<HTMLImageElement | null>(null);
-  const slimeStrongSpriteRef = useRef<HTMLImageElement | null>(null);
-  const goblinSpriteRef = useRef<HTMLImageElement | null>(null);
+  const spritesRef = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
-    const playerImg = new Image();
-    playerImg.src = PLAYER_SPRITE.src;
-    playerImg.onload = () => {
-      playerSpriteRef.current = playerImg;
-    };
-
-    const slimeWeakImg = new Image();
-    slimeWeakImg.src = SLIME_SPRITE.weak.src;
-    slimeWeakImg.onload = () => {
-      slimeWeakSpriteRef.current = slimeWeakImg;
-    };
-
-    const slimeStrongImg = new Image();
-    slimeStrongImg.src = SLIME_SPRITE.strong.src;
-    slimeStrongImg.onload = () => {
-      slimeStrongSpriteRef.current = slimeStrongImg;
-    };
-
-    const goblinImg = new Image();
-    goblinImg.src = GOBLIN_SPRITE.src;
-    goblinImg.onload = () => {
-      goblinSpriteRef.current = goblinImg;
-    };
+    for (const [key, src] of Object.entries(SPRITE_SOURCES)) {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        spritesRef.current.set(key, img);
+      };
+    }
   }, []);
 
-  return {
-    playerSpriteRef,
-    slimeWeakSpriteRef,
-    slimeStrongSpriteRef,
-    goblinSpriteRef,
-  };
+  return spritesRef;
 }

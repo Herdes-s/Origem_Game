@@ -62,8 +62,7 @@ function ScreenGame({
 
   const { screenW, screenH, screenWRef, screenHRef, zoomRef } =
     useScreenSize(canvasRef);
-  const { playerSpriteRef, slimeWeakSpriteRef, slimeStrongSpriteRef, goblinSpriteRef } =
-    useGameSprites();
+  const spritesRef = useGameSprites();
   const { flashCanvasRef, flashCtxRef } = useFlashCanvas();
   const tileTexturesRef = useTileTextures();
   const {
@@ -124,11 +123,7 @@ function ScreenGame({
         camY,
         SCREEN_W,
         SCREEN_H,
-        {
-          slimeWeak: slimeWeakSpriteRef.current,
-          slimeStrong: slimeStrongSpriteRef.current,
-          goblin: goblinSpriteRef.current,
-        },
+        spritesRef.current,
         flashCanvasRef.current,
         flashCtxRef.current,
       );
@@ -143,7 +138,7 @@ function ScreenGame({
         attack,
         frameIndexRef.current,
         attackFrameIndexRef.current,
-        playerSpriteRef.current,
+        spritesRef.current,
         flashCanvasRef.current,
         flashCtxRef.current,
       );
@@ -208,10 +203,7 @@ function ScreenGame({
     screenWRef,
     screenHRef,
     zoomRef,
-    playerSpriteRef,
-    slimeWeakSpriteRef,
-    slimeStrongSpriteRef,
-    goblinSpriteRef,
+    spritesRef,
     flashCanvasRef,
     flashCtxRef,
     tileTexturesRef,

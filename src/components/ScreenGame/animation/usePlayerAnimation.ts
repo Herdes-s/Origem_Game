@@ -2,7 +2,8 @@ import { useRef } from "react";
 import type { AttackState, GameKeys, GameState } from "../../../types/game";
 import {
   PLAYER_ATTACK_FRAME_SPEED,
-  PLAYER_SPRITE,
+  PLAYER_ATTACK_SPRITE,
+  PLAYER_WALK_SPRITE,
 } from "../../../entities/player/playerSprite";
 
 // Estado de animação do player (walk + punch) e leitura de direção pelas
@@ -49,7 +50,7 @@ export function usePlayerAnimation() {
       if (attackFrameTimerRef.current >= PLAYER_ATTACK_FRAME_SPEED) {
         attackFrameTimerRef.current = 0;
         attackFrameIndexRef.current =
-          (attackFrameIndexRef.current + 1) % PLAYER_SPRITE.frameCount;
+          (attackFrameIndexRef.current + 1) % PLAYER_ATTACK_SPRITE.frameCount;
       }
     } else if (isAttackingRef.current) {
       attackFrameIndexRef.current = 0;
@@ -60,10 +61,10 @@ export function usePlayerAnimation() {
     // Animação de caminhada (walk)
     if (moving && gameState === "playing") {
       frameTimerRef.current++;
-      if (frameTimerRef.current >= PLAYER_SPRITE.frameSpeed) {
+      if (frameTimerRef.current >= PLAYER_WALK_SPRITE.frameSpeed) {
         frameTimerRef.current = 0;
         frameIndexRef.current =
-          (frameIndexRef.current + 1) % PLAYER_SPRITE.frameCount;
+          (frameIndexRef.current + 1) % PLAYER_WALK_SPRITE.frameCount;
       }
     } else {
       frameIndexRef.current = 0;
