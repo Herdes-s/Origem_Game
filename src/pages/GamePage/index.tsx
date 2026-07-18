@@ -26,15 +26,16 @@ import {
 import {
   spawnEnemies,
   spawnDensFromMap,
-  START_X,
-  START_Y,
+  getMapStartPixel,
 } from "../../entities/enemies/enemySpawner";
+import { TILE_SIZE } from "../../data/map";
+import { DEFAULT_MAP_ID, setCurrentMapId, getCurrentMapId, type Portal } from "../../data/maps";
 import { loadGame, saveGame } from "../../entities/save/saveGame";
+import { playLevelUp } from "../../entities/audio/soundEngine";
+import MuteButton from "../../components/MuteButton";
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
-import { playLevelUp } from "../../entities/audio/soundEngine";
-import MuteButton from "../../components/MuteButton";
 
 const AUTOSAVE_INTERVAL_MS = 5000;
 
@@ -43,15 +44,22 @@ const AUTOSAVE_INTERVAL_MS = 5000;
 // (useGameLoop) e o loop de desenho (dentro do ScreenGame). Spawn de
 // inimigos vive em entities/enemies/enemySpawner.ts, input de teclado em
 // hooks/useKeyboardControls.ts, atributos (FOR/DES/CON/RES + Precisão) em
-// entities/player/playerAttributes.ts, e level/XP em
-// entities/player/playerProgress.ts.
+// entities/player/playerAttributes.ts, level/XP em
+// entities/player/playerProgress.ts, e mapas/fases em data/maps/*.ts.
 function GamePage() {
   // Carrega o save uma vez (localStorage) — se não existir ou estiver
   // corrompido, loadGame() retorna null e o jogo começa do zero, igual
-  // sempre começou. É uma leitura pura (sempre o mesmo resultado entre
-  // saves), então não precisa de ref — só os useState/useRef abaixo usam
-  // esse valor, e eles só levam em conta o valor inicial mesmo (1ª render).
+  // sempre começou. É uma leitura pura, então não precisa de ref — só os
+  // useState/useRef abaixo usam esse valor, e eles só levam em conta o
+  // valor inicial mesmo (1ª render).
   const savedGame = loadGame();
+
+  // Restaura o mapa salvo ANTES de qualquer coisa abaixo, porque
+  // spawnEnemies()/spawnDensFromMap()/getMapStartPixel() todos leem o
+  // mapa atual — precisa estar certo antes de criar os refs iniciais.
+  // Chamada idempotente (é só um Record lookup), então rodar de novo em
+  // cada render não causa problema.
+  setCurrentMapId(savedGame?.mapId ?? DEFAULT_MAP_ID);
 
   // Atributos e progresso vivem em state — é o que a UI (StatusPanel) lê
   // pra renderizar. O ref abaixo é só um espelho pro game loop (RAF), que
@@ -76,7 +84,7 @@ function GamePage() {
 
   const startingHpMax = computeDerivedStats(attributes).hpMax;
 
-  const posRef = useRef(savedGame?.position ?? { x: START_X, y: START_Y });
+  const posRef = useRef(savedGame?.position ?? getMapStartPixel());
   const keysRef = useRef<GameKeys>({});
   const hudRef = useRef<HudState>({
     hp: savedGame?.hp ?? startingHpMax,
@@ -112,6 +120,32 @@ function GamePage() {
     });
   }, []);
 
+  // Monta o snapshot pra salvar, sempre lendo os refs mais recentes (não
+  // captura valor "velho" de closure, mesmo chamado de dentro de um
+  // interval configurado uma vez só no mount)
+  const buildSnapshot = () => ({
+    attributes: attributesRef.current,
+    progress: progressRef.current,
+    position: posRef.current,
+    hp: hudRef.current.hp,
+    score: hudRef.current.score,
+    mapId: getCurrentMapId(),
+  });
+
+  // Player pisou num portal — troca de mapa, reposiciona, e gera os
+  // inimigos/covis do mapa novo. Atributos/progresso não mudam (mesmo
+  // princípio do respawn: level e atributos são do PLAYER, não do mapa).
+  const handlePortalEnter = useCallback((portal: Portal) => {
+    setCurrentMapId(portal.targetMapId);
+    posRef.current = {
+      x: portal.targetTx * TILE_SIZE + TILE_SIZE / 2,
+      y: portal.targetTy * TILE_SIZE + TILE_SIZE / 2,
+    };
+    enemiesRef.current = spawnEnemies();
+    densRef.current = spawnDensFromMap();
+    saveGame(buildSnapshot());
+  }, []);
+
   useGameLoop({
     posRef,
     keysRef,
@@ -124,17 +158,7 @@ function GamePage() {
     attributesRef,
     densRef,
     onXpGained: handleXpGained,
-  });
-
-  // Monta o snapshot pra salvar, sempre lendo os refs mais recentes (não
-  // captura valor "velho" de closure, mesmo chamado de dentro de um
-  // interval configurado uma vez só no mount)
-  const buildSnapshot = () => ({
-    attributes: attributesRef.current,
-    progress: progressRef.current,
-    position: posRef.current,
-    hp: hudRef.current.hp,
-    score: hudRef.current.score,
+    onPortalEnter: handlePortalEnter,
   });
 
   // Salva na hora quando atributos ou progresso mudam (level up, ponto
@@ -172,9 +196,10 @@ function GamePage() {
   };
 
   const handleRespawn = () => {
-    // Atributos e progresso não resetam no respawn — só posição, vida,
+    // Atributos e progresso não resetam no respawn — só posição (volta
+    // pro início do mapa ATUAL, não necessariamente a caverna), vida,
     // inimigos e ataque
-    posRef.current = { x: START_X, y: START_Y };
+    posRef.current = getMapStartPixel();
     hudRef.current.hp = computeDerivedStats(attributesRef.current).hpMax;
     enemiesRef.current = spawnEnemies();
     attackRef.current = {

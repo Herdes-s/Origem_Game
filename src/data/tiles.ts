@@ -10,6 +10,7 @@ export const TILE = {
   WATER: 2,
   GRASS: 3,
   SPAWN_CAVE: 4,
+  PORTAL: 5,
 } as const;
 
 export type TileDefinition = {
@@ -58,6 +59,13 @@ export const TILE_DEFINITIONS: Record<number, TileDefinition> = {
     solid: false,
     spawnPoint: true,
   },
+  [TILE.PORTAL]: {
+    id: TILE.PORTAL,
+    name: "Portal",
+    color: "#a855f7",
+    textureSrc: "/assets/tiles/portal.png",
+    solid: false,
+  }
 };
 
 const FALLBACK_DEFINITION: TileDefinition = {

@@ -14,6 +14,10 @@ import type { PlayerAttributes } from "../../../entities/player/playerAttributes
 import { computeDerivedStats } from "../../../entities/player/playerAttributes";
 import { updateSpawnDens, type SpawnDen } from "../../../entities/enemies/spawnDen";
 import { playPlayerDeath } from "../../../entities/audio/soundEngine";
+import { getCurrentMap, type Portal } from "../../../data/maps";
+import { TILE_SIZE } from "../../../data/map";
+
+const PORTAL_COOLDOWN_FRAMES = 30; // ~0.5s — evita re-teleportar no mesmo frame/instante
 
 type Args = {
   posRef: React.RefObject<Position>;
@@ -27,6 +31,7 @@ type Args = {
   attributesRef: React.RefObject<PlayerAttributes>;
   densRef: React.RefObject<SpawnDen[]>;
   onXpGained: (amount: number) => void;
+  onPortalEnter: (portal: Portal) => void;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -45,8 +50,10 @@ export function useGameLoop({
   attributesRef,
   densRef,
   onXpGained,
+  onPortalEnter,
 }: Args) {
   const rafRef = useRef<number>(0);
+  const portalCooldownRef = useRef(0);
 
   useEffect(() => {
     const loop = () => {
@@ -95,6 +102,21 @@ export function useGameLoop({
           (dn) => dn.timer > 0,
         );
 
+        if(portalCooldownRef.current > 0) {
+          portalCooldownRef.current--;
+        } else {
+          const playerTx = Math.floor(posRef.current.x / TILE_SIZE);
+          const playerTy = Math.floor(posRef.current.y / TILE_SIZE);
+          const portal = getCurrentMap().portals.find(
+            (p) => p.tx === playerTx && p.ty === playerTy,
+          );
+
+          if (portal) {
+            portalCooldownRef.current = PORTAL_COOLDOWN_FRAMES;
+            onPortalEnter(portal);
+          }
+        }
+
         // Checa morte do player
         if (hudRef.current.hp <= 0) {
           gameStateRef.current = "dead";
@@ -122,5 +144,6 @@ export function useGameLoop({
     attributesRef,
     densRef,
     onXpGained,
+    onPortalEnter,
   ]);
 }

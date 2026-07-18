@@ -8,7 +8,8 @@ import type {
   DamageNumber,
 } from "../../types/game";
 import styles from "./ScreenGame.module.scss";
-import { MAP_W, MAP_H } from "../../data/map";
+import { TILE_SIZE } from "../../data/map";
+import { getCurrentMap } from "../../data/maps";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
 
 import { useScreenSize } from "./hooks/useScreenSize";
@@ -92,6 +93,13 @@ function ScreenGame({
       const attack = attackRef.current;
       const gameState = gameStateRef.current;
 
+      // MAPA ATUAL — lido de novo a cada frame, porque pode mudar no meio
+      // do jogo (portal). getCurrentMap() é uma leitura barata (só um
+      // Record lookup), sem problema chamar isso todo frame.
+      const activeMap = getCurrentMap();
+      const mapW = activeMap.tiles[0].length * TILE_SIZE;
+      const mapH = activeMap.tiles.length * TILE_SIZE;
+
       // ANIMAÇÃO DO PLAYER — atualiza direção e avança frames de walk/punch
       updatePlayerAnimation(keys, attack, gameState, directionRef);
       const direction = directionRef.current;
@@ -103,8 +111,8 @@ function ScreenGame({
       let camX = pos.x - viewW / 2;
       let camY = pos.y - viewH / 2;
 
-      camX = Math.max(0, Math.min(MAP_W - viewW, camX));
-      camY = Math.max(0, Math.min(MAP_H - viewH, camY));
+      camX = Math.max(0, Math.min(mapW - viewW, camX));
+      camY = Math.max(0, Math.min(mapH - viewH, camY));
 
       // LIMPA O FRAME
       ctx.clearRect(0, 0, SCREEN_W, SCREEN_H);
@@ -113,7 +121,7 @@ function ScreenGame({
       ctx.scale(ZOOM, ZOOM);
 
       // 1 MAPA
-      renderMap(ctx, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
+      renderMap(ctx, activeMap.tiles, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
 
       // 2 INIMIGOS
       renderEnemies(

@@ -1,4 +1,5 @@
-import { MAP, TILE_SIZE } from "../data/map";
+import { TILE_SIZE } from "../data/map";
+import { getCurrentMap } from "../data/maps";
 import { isTileSolid } from "../data/tiles";
 import type { TileMap } from "../types/game"
 
@@ -9,9 +10,10 @@ export function pixelToTile(pixel: number): number {
 export function isSolid(
   tileX: number,
   tileY: number,
-  map: TileMap = MAP,
+  map?: TileMap,
 ): boolean {
-  const row = map[tileY];
+  const activeMap = map ?? getCurrentMap().tiles;
+  const row = activeMap[tileY];
   const tile = row?.[tileX];
   return isTileSolid(tile);
 }

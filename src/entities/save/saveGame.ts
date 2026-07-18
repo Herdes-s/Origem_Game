@@ -10,6 +10,7 @@ export type SaveData = {
   position: Position;
   hp: number;
   score: number;
+  mapId: string; 
 };
 
 // localStorage pode falhar (modo privado, quota cheia, navegador exótico)
