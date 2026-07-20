@@ -16,6 +16,7 @@ import { updateSpawnDens, type SpawnDen } from "../../../entities/enemies/spawnD
 import { playPlayerDeath } from "../../../entities/audio/soundEngine";
 import { getCurrentMap, type Portal } from "../../../data/maps";
 import { TILE_SIZE } from "../../../data/map";
+import { computeDeltaScale } from "../../../entities/combat/deltaTime";
 
 const PORTAL_COOLDOWN_FRAMES = 30; // ~0.5s — evita re-teleportar no mesmo frame/instante
 
@@ -54,9 +55,12 @@ export function useGameLoop({
 }: Args) {
   const rafRef = useRef<number>(0);
   const portalCooldownRef = useRef(0);
+  const lastTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const loop = () => {
+    const loop = (timestamp: number) => {
+      const dt = computeDeltaScale(timestamp, lastTimeRef);
+
       if (gameStateRef.current === "playing") {
         // Stats derivados dos atributos atuais (FOR/DES/CON/Precisão).
         // Recalcular por frame é barato (só aritmética) e mantém a HUD e o
@@ -75,6 +79,7 @@ export function useGameLoop({
           hudRef.current,
           damageNumbersRef.current,
           stats,
+          dt,
         );
 
         if (xpGained > 0) onXpGained(xpGained);
@@ -87,10 +92,11 @@ export function useGameLoop({
           attackRef,
           stats.defense,
           damageNumbersRef.current,
+          dt,
         );
 
         // Covis de spawn — nasce um inimigo novo onde o anterior morreu
-        updateSpawnDens(densRef.current, enemiesRef.current);
+        updateSpawnDens(densRef.current, enemiesRef.current, dt);
 
         // Remove inimigos cuja animação de morte já terminou
         enemiesRef.current = enemiesRef.current.filter(
@@ -102,8 +108,8 @@ export function useGameLoop({
           (dn) => dn.timer > 0,
         );
 
-        if(portalCooldownRef.current > 0) {
-          portalCooldownRef.current--;
+        if (portalCooldownRef.current > 0) {
+          portalCooldownRef.current -= dt;
         } else {
           const playerTx = Math.floor(posRef.current.x / TILE_SIZE);
           const playerTy = Math.floor(posRef.current.y / TILE_SIZE);

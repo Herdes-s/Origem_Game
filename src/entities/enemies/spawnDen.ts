@@ -37,7 +37,7 @@ export function createSpawnDen(
 // Chamado a cada frame do game loop. Pra cada covil: se o inimigo dele
 // ainda está na lista de inimigos, não faz nada. Se não está (morreu e já
 // foi removido), conta o cooldown e spawna um novo quando ele zera.
-export function updateSpawnDens(dens: SpawnDen[], enemies: Enemy[]) {
+export function updateSpawnDens(dens: SpawnDen[], enemies: Enemy[], dt: number) {
   for (const den of dens) {
     const alive =
       den.currentEnemyId !== null &&
@@ -46,7 +46,7 @@ export function updateSpawnDens(dens: SpawnDen[], enemies: Enemy[]) {
     if (alive) continue;
 
     if (den.cooldownTimer > 0) {
-      den.cooldownTimer--;
+      den.cooldownTimer -= dt;
       continue;
     }
 

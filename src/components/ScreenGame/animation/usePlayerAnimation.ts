@@ -23,6 +23,7 @@ export function usePlayerAnimation() {
     attack: AttackState,
     gameState: GameState,
     directionRef: React.RefObject<string>,
+    dt: number,
   ) {
     let moving = false;
 
@@ -46,7 +47,7 @@ export function usePlayerAnimation() {
     // Animação de ataque (punch)
     if (attack.active && gameState === "playing") {
       isAttackingRef.current = true;
-      attackFrameTimerRef.current++;
+      attackFrameTimerRef.current += dt;
       if (attackFrameTimerRef.current >= PLAYER_ATTACK_FRAME_SPEED) {
         attackFrameTimerRef.current = 0;
         attackFrameIndexRef.current =
@@ -60,7 +61,7 @@ export function usePlayerAnimation() {
 
     // Animação de caminhada (walk)
     if (moving && gameState === "playing") {
-      frameTimerRef.current++;
+      frameTimerRef.current += dt;
       if (frameTimerRef.current >= PLAYER_WALK_SPRITE.frameSpeed) {
         frameTimerRef.current = 0;
         frameIndexRef.current =

@@ -29,6 +29,7 @@ import {
 } from "./render/renderDeathScreen";
 import { renderDebugHitbox } from "./render/renderDebugHitbox";
 import { DEBUG_HITBOX } from "./utils/hitbox";
+import { computeDeltaScale } from "../../entities/combat/deltaTime";
 
 // PROPS
 type Props = {
@@ -60,6 +61,7 @@ function ScreenGame({
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
+  const lastTimeRef = useRef<number | null>(null);
 
   const { screenW, screenH, screenWRef, screenHRef, zoomRef } =
     useScreenSize(canvasRef);
@@ -81,7 +83,9 @@ function ScreenGame({
 
     ctx.imageSmoothingEnabled = false;
 
-    const loop = () => {
+    const loop = (timestamp: number) => {
+      const dt = computeDeltaScale(timestamp, lastTimeRef);
+
       const SCREEN_W = screenWRef.current;
       const SCREEN_H = screenHRef.current;
       const ZOOM = zoomRef.current;
@@ -101,7 +105,7 @@ function ScreenGame({
       const mapH = activeMap.tiles.length * TILE_SIZE;
 
       // ANIMAÇÃO DO PLAYER — atualiza direção e avança frames de walk/punch
-      updatePlayerAnimation(keys, attack, gameState, directionRef);
+      updatePlayerAnimation(keys, attack, gameState, directionRef, dt);
       const direction = directionRef.current;
 
       // CÂMERA — segue o player, sem sair dos limites do mapa

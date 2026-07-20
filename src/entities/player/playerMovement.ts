@@ -88,6 +88,7 @@ export function updatePlayerMovement(
   hud: HudState,
   damageNumbers: DamageNumber[],
   stats: DerivedPlayerStats, // dano, velocidade, cooldown etc. já com bônus de atributos
+  dt: number, // fator de escala de tempo (1.0 = ritmo normal a 60fps)
 ): number { // retorna o XP total ganho nesse frame (0 na maioria das vezes)
   let xpGained = 0;
 
@@ -106,15 +107,15 @@ export function updatePlayerMovement(
     dy = dy / len;
   }
 
-  const nextX = pos.x + dx * stats.speed;
-  const nextY = pos.y + dy * stats.speed;
+  const nextX = pos.x + dx * stats.speed * dt;
+  const nextY = pos.y + dy * stats.speed * dt;
 
   if (!wouldCollide(nextX, pos.y)) pos.x = nextX;
   if (!wouldCollide(pos.x, nextY)) pos.y = nextY;
 
   // ── ATAQUE ────────────────────────────────────────────────
-  // Decrementa cooldown a cada frame
-  if (attack.cooldown > 0) attack.cooldown--;
+  // Decrementa cooldown pelo tempo real decorrido, não por 1 fixo
+  if (attack.cooldown > 0) attack.cooldown -= dt;
 
   // Inicia ataque ao pressionar Space ou x
   if ((keys[" "] || keys["x"]) && attack.cooldown <= 0 && !attack.active) {
@@ -207,19 +208,19 @@ export function updatePlayerMovement(
       }
     }
 
-    attack.duration--;
+    attack.duration -= dt;
     if (attack.duration <= 0) attack.active = false;
   }
 
   // ── FLASH DO PLAYER ───────────────────────────────────────
-  if (attack.hitFlash > 0) attack.hitFlash--;
+  if (attack.hitFlash > 0) attack.hitFlash -= dt;
 
   // ── SEPARAÇÃO FÍSICA ──────────────────────────────────────
   separateFromPlayer(pos, enemies);
 
   for (const dn of damageNumbers) {
-    dn.timer--;
-    dn.y -= 0.4;
+    dn.timer -= dt;
+    dn.y -= 0.4 * dt;
   }
 
   return xpGained;

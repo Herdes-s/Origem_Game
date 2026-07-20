@@ -1,4 +1,9 @@
-import type { AttackState, DamageNumber, HudState, Position } from "../../types/game";
+import type {
+  AttackState,
+  DamageNumber,
+  HudState,
+  Position,
+} from "../../types/game";
 import { wouldCollide } from "../../utils/collision";
 import { PLAYER_CONFIG } from "../player/player";
 import type { Enemy } from "./enemyTypes";
@@ -28,7 +33,7 @@ function normalize(dx: number, dy: number): [number, number] {
   return [dx / len, dy / len];
 }
 
-function moveEnemy(enemy: Enemy, dx: number, dy: number) {
+function moveEnemy(enemy: Enemy, dx: number, dy: number, dt: number) {
   const [ndx, ndy] = normalize(dx, dy);
 
   // Direção que o sprite encara — só visível pra raças "directional"
@@ -36,25 +41,29 @@ function moveEnemy(enemy: Enemy, dx: number, dy: number) {
   if (ndx !== 0 || ndy !== 0) {
     enemy.direction =
       Math.abs(ndx) > Math.abs(ndy)
-        ? ndx > 0 ? "right" : "left"
-        : ndy > 0 ? "down" : "up";
+        ? ndx > 0
+          ? "right"
+          : "left"
+        : ndy > 0
+          ? "down"
+          : "up";
   }
 
-  const nextX = enemy.x + ndx * enemy.speed;
-  const nextY = enemy.y + ndy * enemy.speed;
+  const nextX = enemy.x + ndx * enemy.speed * dt;
+  const nextY = enemy.y + ndy * enemy.speed * dt;
 
   if (!wouldCollide(nextX, enemy.y)) enemy.x = nextX;
   if (!wouldCollide(enemy.x, nextY)) enemy.y = nextY;
 }
 
 // KNOCKBACK
-function apllyKnockback(enemy: Enemy) {
+function apllyKnockback(enemy: Enemy, dt: number) {
   if (Math.abs(enemy.knockbackX) < 0.1) enemy.knockbackX = 0;
   if (Math.abs(enemy.knockbackY) < 0.1) enemy.knockbackY = 0;
   if (enemy.knockbackX === 0 && enemy.knockbackY === 0) return;
 
-  const nextX = enemy.x + enemy.knockbackX;
-  const nextY = enemy.y + enemy.knockbackY;
+  const nextX = enemy.x + enemy.knockbackX * dt;
+  const nextY = enemy.y + enemy.knockbackY * dt;
 
   if (!wouldCollide(nextX, enemy.y)) enemy.x = nextX;
   else enemy.knockbackX = 0;
@@ -62,16 +71,20 @@ function apllyKnockback(enemy: Enemy) {
   if (!wouldCollide(enemy.x, nextY)) enemy.y = nextY;
   else enemy.knockbackY = 0;
 
-  enemy.knockbackX *= PLAYER_CONFIG.knockbackDecay;
-  enemy.knockbackY *= PLAYER_CONFIG.knockbackDecay;
+  // Decaimento é uma taxa (não uma subtração fixa), então precisa de
+  // exponenciação pra continuar correto quando dt varia — multiplicar
+  // direto por 0.8 toda vez só funciona a um ritmo de frame constante.
+  const decay = Math.pow(PLAYER_CONFIG.knockbackDecay, dt);
+  enemy.knockbackX *= decay;
+  enemy.knockbackY *= decay;
 }
 
 // ANIMAÇÂO
-function updateAnimation(enemy: Enemy) {
+function updateAnimation(enemy: Enemy, dt: number) {
   const speed = FRAME_SPEED_BY_RACE[enemy.race]?.[enemy.animState] ?? 12;
   const count = 4;
 
-  enemy.frameTimer++;
+  enemy.frameTimer += dt;
   if (enemy.frameTimer >= speed) {
     enemy.frameTimer = 0;
     enemy.frameIndex = (enemy.frameIndex + 1) % count;
@@ -82,12 +95,12 @@ function updateAnimation(enemy: Enemy) {
 }
 
 // COMPORTAMENTOS
-function chase(enemy: Enemy, player: Position) {
+function chase(enemy: Enemy, player: Position, dt: number) {
   enemy.animState = "move";
-  moveEnemy(enemy, player.x - enemy.x, player.y - enemy.y);
+  moveEnemy(enemy, player.x - enemy.x, player.y - enemy.y, dt);
 }
 
-function patrol(enemy: Enemy) {
+function patrol(enemy: Enemy, dt: number) {
   if (!enemy.patrolA || !enemy.patrolB || !enemy.patrolTarget) return;
 
   const target = enemy.patrolTarget === "A" ? enemy.patrolA : enemy.patrolB;
@@ -100,10 +113,10 @@ function patrol(enemy: Enemy) {
   }
 
   enemy.animState = "move";
-  moveEnemy(enemy, target.x - enemy.x, target.y - enemy.y);
+  moveEnemy(enemy, target.x - enemy.x, target.y - enemy.y, dt);
 }
 
-function wander(enemy: Enemy) {
+function wander(enemy: Enemy, dt: number) {
   if (
     enemy.wanderDx === undefined ||
     enemy.wanderDy === undefined ||
@@ -120,8 +133,8 @@ function wander(enemy: Enemy) {
     enemy.animState = "move";
   }
 
-  enemy.wanderTimer--;
-  moveEnemy(enemy, enemy.wanderDx, enemy.wanderDy);
+  enemy.wanderTimer -= dt;
+  moveEnemy(enemy, enemy.wanderDx, enemy.wanderDy, dt);
 }
 
 function tryDamagePlayer(
@@ -131,9 +144,10 @@ function tryDamagePlayer(
   attackRef: React.RefObject<AttackState>,
   defense: number,
   damageNumbers: DamageNumber[],
+  dt: number,
 ) {
   if (enemy.damageCooldownTimer > 0) {
-    enemy.damageCooldownTimer--;
+    enemy.damageCooldownTimer -= dt;
     return;
   }
 
@@ -141,7 +155,9 @@ function tryDamagePlayer(
     // Crítico do inimigo (vem da Precisão dele) + defesa do player (RES)
     // reduzindo o dano recebido, com piso de 1 — nunca zera de todo
     const isCrit = Math.random() < enemy.critChance;
-    const rawDamage = isCrit ? enemy.damage * enemy.critDamageMultiplier : enemy.damage;
+    const rawDamage = isCrit
+      ? enemy.damage * enemy.critDamageMultiplier
+      : enemy.damage;
     const finalDamage = Math.max(1, Math.round(rawDamage - defense));
     hud.hp = Math.max(0, hud.hp - finalDamage);
     enemy.damageCooldownTimer = enemy.damageCooldown;
@@ -178,11 +194,12 @@ export function updateEnemies(
   attackRef: React.RefObject<AttackState>,
   defense: number,
   damageNumbers: DamageNumber[],
+  dt: number,
 ) {
   for (const enemy of enemies) {
-    if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer--;
+    if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer -= dt;
 
-    apllyKnockback(enemy);
+    apllyKnockback(enemy, dt);
 
     if (enemy.hp <= 0) {
       if (enemy.animState !== "death") {
@@ -191,7 +208,7 @@ export function updateEnemies(
         enemy.frameTimer = 0;
       }
 
-      const cycleDone = updateAnimation(enemy);
+      const cycleDone = updateAnimation(enemy, dt);
       if (cycleDone) {
         enemy.deathAnimDone = true;
       }
@@ -200,11 +217,19 @@ export function updateEnemies(
     }
 
     if (enemy.animState === "attack") {
-      const done = updateAnimation(enemy);
+      const done = updateAnimation(enemy, dt);
       if (done) {
         enemy.animState = enemy.behavior === "chase" ? "move" : "idle";
       }
-      tryDamagePlayer(enemy, player, hud, attackRef, defense, damageNumbers);
+      tryDamagePlayer(
+        enemy,
+        player,
+        hud,
+        attackRef,
+        defense,
+        damageNumbers,
+        dt,
+      );
       continue;
     }
 
@@ -218,17 +243,17 @@ export function updateEnemies(
 
     switch (enemy.behavior) {
       case "chase":
-        chase(enemy, player);
+        chase(enemy, player, dt);
         break;
       case "patrol":
-        patrol(enemy);
+        patrol(enemy, dt);
         break;
       case "wander":
-        wander(enemy);
+        wander(enemy, dt);
         break;
     }
 
-    tryDamagePlayer(enemy, player, hud, attackRef, defense, damageNumbers);
-    updateAnimation(enemy);
+    tryDamagePlayer(enemy, player, hud, attackRef, defense, damageNumbers, dt);
+    updateAnimation(enemy, dt);
   }
 }
