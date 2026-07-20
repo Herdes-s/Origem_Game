@@ -19,6 +19,7 @@ import {
   type PrimaryAttributes,
 } from "../../entities/player/playerAttributes";
 import {
+  applyDeathPenalty,
   DEFAULT_PROGRESS,
   gainXp,
   type PlayerProgress,
@@ -29,7 +30,12 @@ import {
   getMapStartPixel,
 } from "../../entities/enemies/enemySpawner";
 import { TILE_SIZE } from "../../data/map";
-import { DEFAULT_MAP_ID, setCurrentMapId, getCurrentMapId, type Portal } from "../../data/maps";
+import {
+  DEFAULT_MAP_ID,
+  setCurrentMapId,
+  getCurrentMapId,
+  type Portal,
+} from "../../data/maps";
 import { loadGame, saveGame } from "../../entities/save/saveGame";
 import { playLevelUp } from "../../entities/audio/soundEngine";
 import MuteButton from "../../components/MuteButton";
@@ -146,6 +152,15 @@ function GamePage() {
     saveGame(buildSnapshot());
   }, []);
 
+  const handlePlayerDeath = useCallback(() => {
+    const result = applyDeathPenalty(
+      progressRef.current,
+      attributesRef.current,
+    );
+    setProgress(result.progress);
+    setAttributes(result.attributes);
+  }, []);
+
   useGameLoop({
     posRef,
     keysRef,
@@ -159,6 +174,7 @@ function GamePage() {
     densRef,
     onXpGained: handleXpGained,
     onPortalEnter: handlePortalEnter,
+    onPlayerDeath: handlePlayerDeath,
   });
 
   // Salva na hora quando atributos ou progresso mudam (level up, ponto

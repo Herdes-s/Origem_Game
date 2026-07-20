@@ -43,7 +43,11 @@ const PLAYER_BASE: CombatBase = {
 export function computeDerivedStats(
   attributes: PlayerAttributes,
 ): DerivedPlayerStats {
-  return computeDerivedCombatStats(PLAYER_BASE, attributes.primary, attributes.secondary);
+  return computeDerivedCombatStats(
+    PLAYER_BASE,
+    attributes.primary,
+    attributes.secondary,
+  );
 }
 
 // Gasta 1 ponto de level up num atributo primário — retorna um objeto novo
@@ -59,4 +63,30 @@ export function allocatePoint(
       [key]: attributes.primary[key] + 1,
     },
   };
+}
+
+const PRIMARY_KEYS: (keyof PrimaryAttributes)[] = ["for", "des", "con", "res"];
+
+// Penalidade de morte com regressão de level: remove `count` pontos de
+// atributos primários escolhidos aleatoriamente (com piso 0 — nunca fica
+// negativo). Cada chamada sorteia 1 dos 4 atributos, então pode tirar 2
+// do mesmo ou 1 de cada um dos dois.
+export function removeRandomAttributePoints(
+  attributes: PlayerAttributes,
+  count: number,
+): PlayerAttributes {
+  let result = attributes;
+
+  for (let i = 0; i < count; i++) {
+    const key = PRIMARY_KEYS[Math.floor(Math.random() * PRIMARY_KEYS.length)];
+    result = {
+      ...result,
+      primary: {
+        ...result.primary,
+        [key]: Math.max(0, result.primary[key] - 1),
+      },
+    };
+  }
+
+  return result;
 }

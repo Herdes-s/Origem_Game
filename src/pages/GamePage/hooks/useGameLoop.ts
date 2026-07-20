@@ -33,6 +33,7 @@ type Args = {
   densRef: React.RefObject<SpawnDen[]>;
   onXpGained: (amount: number) => void;
   onPortalEnter: (portal: Portal) => void;
+  onPlayerDeath: () => void;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -52,6 +53,7 @@ export function useGameLoop({
   densRef,
   onXpGained,
   onPortalEnter,
+  onPlayerDeath,
 }: Args) {
   const rafRef = useRef<number>(0);
   const portalCooldownRef = useRef(0);
@@ -127,6 +129,7 @@ export function useGameLoop({
         if (hudRef.current.hp <= 0) {
           gameStateRef.current = "dead";
           playPlayerDeath();
+          onPlayerDeath();
         }
       }
 
@@ -151,5 +154,6 @@ export function useGameLoop({
     densRef,
     onXpGained,
     onPortalEnter,
+    onPlayerDeath,
   ]);
 }
