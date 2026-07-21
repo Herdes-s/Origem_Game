@@ -1,9 +1,12 @@
-// Desktop: escondido
-// Mobile: fixo no rodapé da tela em position absolute
+// Mobile: fixo no rodapé da tela em position absolute. "Mobile" aqui é
+// pointer:coarse (tela de toque) + a MENOR das duas dimensões — não só
+// a largura sozinha, senão girar pra paisagem some com os controles no
+// meio do giro (mesma lógica de calcZoom em data/map.ts).
 .controls_wrapper {
-  display: none; // escondido por padrão (desktop)
+  display: none; // escondido por padrão (desktop / mouse)
 
-  @media (max-width: 767px) {
+  @media (pointer: coarse) and (max-width: 767px),
+         (pointer: coarse) and (max-height: 767px) {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
@@ -22,12 +25,24 @@
   }
 }
 
+// Mixin manual (SCSS não tem @mixin aqui, então repete nos dois botões):
+// bloqueia o menu nativo de "copiar/selecionar" que o toque longo do
+// sistema operacional dispara em qualquer elemento com texto — é isso
+// que causava o menu de seleção e a vibração ao segurar os botões.
+%no_native_touch_ui {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none; // Safari/iOS — o que o user-select sozinho não cobre
+  -webkit-tap-highlight-color: transparent;
+}
+
 // Cruz direcional em grid 3x3
 .dpad {
   display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(3, 56px);
-  gap: 4px;
+  grid-template-columns: repeat(3, 68px);
+  grid-template-rows: repeat(3, 68px);
+  gap: 6px;
 
   button:nth-child(1) { grid-column: 2; grid-row: 1; } // ▲
   button:nth-child(2) { grid-column: 1; grid-row: 2; } // ◀
@@ -37,16 +52,15 @@
 
 // Botão direcional padrão
 .btn {
+  @extend %no_native_touch_ui;
   width: 100%;
   height: 100%;
   background: rgba(30, 41, 59, 0.85);
   border: 2px solid #334155;
   border-radius: 8px;
   color: #e2e8f0;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   cursor: pointer;
-  touch-action: none;
-  user-select: none;
   backdrop-filter: blur(2px);
 
   &:active {
@@ -64,16 +78,15 @@
 
 // Botão de ataque — círculo com ícone
 .attack_btn {
-  width: 72px;
-  height: 72px;
+  @extend %no_native_touch_ui;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   background: rgba(127, 29, 29, 0.85);
   border: 2px solid #ef4444;
   color: #fef2f2;
-  font-size: 1.8rem;
+  font-size: 2rem;
   cursor: pointer;
-  touch-action: none;
-  user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -19,8 +19,17 @@ const DIRECTIONS: { label: string; key: string }[] = [
 const ATTACK_KEY = " ";
 
 function ControlGame({ keysRef }: Props) {
-  const handlePress   = (key: string) => { keysRef.current[key] = true; };
-  const handleRelease = (key: string) => { keysRef.current[key] = false; };
+  const handlePress = (key: string) => {
+    keysRef.current[key] = true;
+  };
+  const handleRelease = (key: string) => {
+    keysRef.current[key] = false;
+  };
+
+  // Reforço via JS pro bloqueio do menu de contexto nativo — o CSS
+  // (-webkit-touch-callout etc.) já cobre a maioria dos casos, isso é
+  // rede de segurança pros navegadores que ainda deixam passar.
+  const preventContextMenu = (e: React.SyntheticEvent) => e.preventDefault();
 
   return (
     <div className={styles.controls_wrapper}>
@@ -33,7 +42,8 @@ function ControlGame({ keysRef }: Props) {
             onPointerDown={() => handlePress(key)}
             onPointerUp={() => handleRelease(key)}
             onPointerLeave={() => handleRelease(key)}
-          >
+            onContextMenu={preventContextMenu}
+            >
             {label}
           </button>
         ))}
@@ -46,6 +56,7 @@ function ControlGame({ keysRef }: Props) {
           onPointerDown={() => handlePress(ATTACK_KEY)}
           onPointerUp={() => handleRelease(ATTACK_KEY)}
           onPointerLeave={() => handleRelease(ATTACK_KEY)}
+          onContextMenu={preventContextMenu}
         >
           👊
         </button>

@@ -29,6 +29,17 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("primary");
 
+  // Tira o foco do botão logo depois do clique — sem isso, o navegador
+  // mantém o foco de teclado nele, e apertar Espaço (pra atacar, não pra
+  // "clicar" o botão) reaciona o próprio botão em vez de só atacar.
+  const clickAndBlur = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    action: () => void,
+  ) => {
+    action();
+    e.currentTarget.blur();
+  };
+
   const stats = computeDerivedStats(attributes);
   const xpPercent = Math.min(100, (progress.xp / progress.xpToNextLevel) * 100);
 
@@ -59,10 +70,12 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
     <>
       <button
         className={styles.toggle_button}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(e) => clickAndBlur(e, () => setOpen((v) => !v))}
         type="button"
       >
-        {open ? "✕ Fechar" : `☰ Status ${progress.unallocatedPoints > 0 ? `(${progress.unallocatedPoints})` : ""}`}
+        {open
+          ? "✕ Fechar"
+          : `☰ Status ${progress.unallocatedPoints > 0 ? `(${progress.unallocatedPoints})` : ""}`}
       </button>
 
       {open && (
@@ -89,14 +102,14 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
           <div className={styles.tabs}>
             <button
               className={tab === "primary" ? styles.tab_active : styles.tab}
-              onClick={() => setTab("primary")}
+              onClick={(e) => clickAndBlur(e, () => setTab("primary"))}
               type="button"
             >
               Atributos
             </button>
             <button
               className={tab === "secondary" ? styles.tab_active : styles.tab}
-              onClick={() => setTab("secondary")}
+              onClick={(e) => clickAndBlur(e, () => setTab("secondary"))}
               type="button"
             >
               Secundários
@@ -112,7 +125,9 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
                     {progress.unallocatedPoints > 0 && (
                       <button
                         className={styles.allocate_button}
-                        onClick={() => onAllocate(row.key)}
+                        onClick={(e) =>
+                          clickAndBlur(e, () => onAllocate(row.key))
+                        }
                         type="button"
                         aria-label={`Alocar ponto em ${row.label}`}
                       >
@@ -133,7 +148,8 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
                 <span>Precisão</span>
                 <strong>{attributes.secondary.precisao}</strong>
                 <small>
-                  {Math.round(stats.critChance * 100)}% chance de crítico · x{stats.critDamageMultiplier} de dano
+                  {Math.round(stats.critChance * 100)}% chance de crítico · x
+                  {stats.critDamageMultiplier} de dano
                 </small>
               </li>
             </ul>

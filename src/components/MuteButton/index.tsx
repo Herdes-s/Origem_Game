@@ -8,8 +8,9 @@ import styles from "./MuteButton.module.scss";
 function MuteButton() {
   const [muted, setMuted] = useState(() => isMuted());
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     setMuted(toggleMute());
+    e.currentTarget.blur();
   };
 
   return (
