@@ -14,14 +14,14 @@ export default defineConfig({
 
       // Ícones e sprites/texturas do jogo entram no cache do app pra
       // funcionar offline depois da primeira visita.
-      includeAssets: ["assets/**/*.png"],
+      includeAssets: ["assets/**/*.png", "icons/**/*.png"],
 
       manifest: {
         name: "Origem",
         short_name: "Origem",
         description: "RPG top-down com atributos, level up e combate.",
         lang: "pt-BR",
-        start_url: "/game",
+        start_url: "/",
         scope: "/",
         display: "standalone",
         orientation: "any",
