@@ -1,0 +1,23 @@
+// Barra fixa no topo central que agrupa os botões de HUD (Inventário,
+// Status, Mudo). O flex + gap centraliza e espaça de verdade, então cada
+// botão pode crescer/encolher conforme o próprio texto (ex: contador
+// "(3/10)" do inventário) sem nunca sobrepor o vizinho — ao contrário de
+// posicionar cada botão individualmente com offset fixo em pixel a partir
+// de 50%, que quebra assim que a largura de qualquer um muda.
+.top_bar {
+  position: fixed;
+  // A HUD desenhada no CANVAS (barra de HP + texto) ocupa y:12–39px,
+  // sempre nesses pixels de tela fixos, não importa a largura do
+  // aparelho (ver renderHud.ts). Descer a barra pra cá garante zero
+  // sobreposição em qualquer tamanho de tela — inclusive celular
+  // estreito, onde centralizar horizontalmente sozinho não bastava (a
+  // barra podia cair em cima da HP à esquerda).
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

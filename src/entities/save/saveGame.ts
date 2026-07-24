@@ -1,6 +1,7 @@
 import type { PlayerAttributes } from "../player/playerAttributes";
 import type { PlayerProgress } from "../player/playerProgress";
 import type { Position } from "../../types/game";
+import type { Inventory } from "../items/itemTypes";
 
 const SAVE_KEY = "origem-save-v1";
 
@@ -10,7 +11,10 @@ export type SaveData = {
   position: Position;
   hp: number;
   score: number;
-  mapId: string; 
+  mapId: string;
+  // Opcional: saves de antes do inventário existir não têm esse campo —
+  // GamePage já trata isso com `savedGame?.inventory ?? createEmptyInventory()`.
+  inventory?: Inventory;
 };
 
 // localStorage pode falhar (modo privado, quota cheia, navegador exótico)

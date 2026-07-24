@@ -1,9 +1,8 @@
-// Posicionado logo à direita do botão "☰ Status" (que fica centralizado
-// no topo) — mesmo estilo visual, mesma altura.
+// Sem position/top/left aqui de propósito: o botão agora é um item da
+// barra flex compartilhada (.top_bar em GamePage.module.scss) — evita o
+// bug de offset em pixel "chutado" que quebrava quando o texto de outro
+// botão mudava de largura.
 .mute_button {
-  position: fixed;
-  top: 12px;
-  left: calc(50% + 78px);
   z-index: 20;
 
   padding: 6px 10px;

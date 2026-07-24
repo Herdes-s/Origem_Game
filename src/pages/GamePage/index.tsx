@@ -39,9 +39,19 @@ import {
 import { loadGame, saveGame } from "../../entities/save/saveGame";
 import { playLevelUp } from "../../entities/audio/soundEngine";
 import MuteButton from "../../components/MuteButton";
+import InventoryPanel from "../../components/InventoryPanel";
+import type { Inventory } from "../../entities/items/itemTypes";
+import {
+  addItem,
+  computeInventoryWeight,
+  createEmptyInventory,
+  removeItem,
+} from "../../entities/items/inventory";
+import { computeCarryCapacity } from "../../entities/items/weight";
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
+import styles from "./GamePage.module.scss";
 
 const AUTOSAVE_INTERVAL_MS = 5000;
 
@@ -87,6 +97,18 @@ function GamePage() {
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
+
+  // Inventário — mesmo padrão de attributes/progress: state pra UI
+  // (InventoryPanel) reagir, ref-espelho pro game loop ler o peso a cada
+  // frame sem precisar de re-render.
+  const [inventory, setInventory] = useState<Inventory>(
+    savedGame?.inventory ?? createEmptyInventory(),
+  );
+  const inventoryRef = useRef<Inventory>(inventory);
+
+  useEffect(() => {
+    inventoryRef.current = inventory;
+  }, [inventory]);
 
   const startingHpMax = computeDerivedStats(attributes).hpMax;
 
@@ -136,6 +158,7 @@ function GamePage() {
     hp: hudRef.current.hp,
     score: hudRef.current.score,
     mapId: getCurrentMapId(),
+    inventory: inventoryRef.current,
   });
 
   // Player pisou num portal — troca de mapa, reposiciona, e gera os
@@ -172,6 +195,7 @@ function GamePage() {
     gameStateRef,
     attributesRef,
     densRef,
+    inventoryRef,
     onXpGained: handleXpGained,
     onPortalEnter: handlePortalEnter,
     onPlayerDeath: handlePlayerDeath,
@@ -181,7 +205,7 @@ function GamePage() {
   // alocado) — essas mudanças são raras, então salvar na hora não pesa.
   useEffect(() => {
     saveGame(buildSnapshot());
-  }, [attributes, progress]);
+  }, [attributes, progress, inventory]);
 
   // Posição/HP/score mudam a cada frame dentro de refs (não disparam
   // re-render), então autosave periódico + um último save ao fechar/trocar
@@ -209,6 +233,24 @@ function GamePage() {
       ...prev,
       unallocatedPoints: prev.unallocatedPoints - 1,
     }));
+  };
+
+  // TEMPORÁRIO: até existir coleta de verdade (drop de inimigo, planta no
+  // mapa etc.), o InventoryPanel tem botões de item de teste que chamam
+  // isso — só pra validar stack/slot/peso. addItem() já respeita
+  // capacidade de carga (não deixa passar do limite).
+  const handleAddTestItem = (itemId: string) => {
+    const capacity = computeCarryCapacity(attributesRef.current.primary.for);
+    const currentWeight = computeInventoryWeight(inventoryRef.current);
+
+    setInventory((prev) => {
+      const result = addItem(prev, itemId, 1, currentWeight, capacity);
+      return result.inventory;
+    });
+  };
+
+  const handleDiscardItem = (slotIndex: number) => {
+    setInventory((prev) => removeItem(prev, slotIndex, 1));
   };
 
   const handleRespawn = () => {
@@ -244,12 +286,21 @@ function GamePage() {
         onRespawn={handleRespawn}
       />
       <ControlGame keysRef={keysRef} />
-      <StatusPanel
-        attributes={attributes}
-        progress={progress}
-        onAllocate={handleAllocate}
-      />
-      <MuteButton />
+      <div className={styles.top_bar}>
+        <InventoryPanel
+          inventory={inventory}
+          currentWeight={computeInventoryWeight(inventory)}
+          carryCapacity={computeCarryCapacity(attributes.primary.for)}
+          onAddTestItem={handleAddTestItem}
+          onDiscard={handleDiscardItem}
+        />
+        <StatusPanel
+          attributes={attributes}
+          progress={progress}
+          onAllocate={handleAllocate}
+        />
+        <MuteButton />
+      </div>
     </>
   );
 }

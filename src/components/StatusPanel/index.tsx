@@ -5,6 +5,7 @@ import type {
 } from "../../entities/player/playerAttributes";
 import { computeDerivedStats } from "../../entities/player/playerAttributes";
 import type { PlayerProgress } from "../../entities/player/playerProgress";
+import { computeCarryCapacity } from "../../entities/items/weight";
 import styles from "./StatusPanel.module.scss";
 
 type Props = {
@@ -47,7 +48,7 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
     {
       key: "for",
       label: "Força (FOR)",
-      detail: `${Math.round(stats.damage)} dano do soco · ${stats.knockbackForce.toFixed(1)} força de knockback`,
+      detail: `${Math.round(stats.damage)} dano do soco · ${stats.knockbackForce.toFixed(1)} de knockback · ${computeCarryCapacity(attributes.primary.for).toFixed(1)} de carga máxima`,
     },
     {
       key: "des",
