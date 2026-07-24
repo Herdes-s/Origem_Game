@@ -1,7 +1,9 @@
-@import "../../styles/variables";
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap");
+
+@import url("https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap");
 
 .home_page {
-  background: radial-gradient(circle, $bg-secondary-color, $bg-primary-color);
+  background: radial-gradient(circle, #0e4392, #061433);
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -11,14 +13,10 @@
 
   .title {
     font-size: 4rem;
-    font-family: $font-main;
+    font-family: "Orbitron", serif;
     margin-bottom: 1rem;
 
-    background: radial-gradient(
-      circle,
-      $secondary-detail-color,
-      $primary-detail-color
-    );
+    background: radial-gradient(circle, #bf00ff, #00d9ff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -27,22 +25,14 @@
 
     @keyframes colorInfinit {
       0% {
-        background: radial-gradient(
-          circle,
-          $secondary-detail-color,
-          $primary-detail-color
-        );
+        background: radial-gradient(circle, #bf00ff, #00d9ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         display: inline-block;
       }
       50% {
-        background: radial-gradient(
-          circle,
-          $primary-detail-color,
-          $secondary-detail-color
-        );
+        background: radial-gradient(circle, #00d9ff, #bf00ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -53,7 +43,7 @@
 
   .sub_title {
     font-size: 1.25rem;
-    font-family: $font-secondary;
+    font-family: "Rajdhani", sans-serif;
     font-weight: 500;
     color: #5a7a99;
     letter-spacing: 3px;
@@ -61,46 +51,62 @@
     margin-bottom: 2rem;
   }
 
-  .btn {
-    font-size: 1.5rem;
-    font-family: $font-secondary;
-    padding: 0.5rem 3rem;
+  .btn_group {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    color: $primary-detail-color;
-    background: linear-gradient(
-      to right,
-      rgba(0, 217, 255, 0.2),
-      rgba(191, 0, 255, 0.2)
-    );
-    border-block: 2px solid #00d9ff;
-    border-inline: none;
+    gap: 1rem;
 
-    animation: bgInfinit 2.5s infinite ease-in-out;
-    transition: transform 0.3s ease;
-    cursor: pointer;
+    .btn {
+      font-size: 1.5rem;
+      font-family: "Rajdhani", sans-serif;
+      padding: 0.5rem 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: #00d9ff;
+      background: linear-gradient(
+        to right,
+        rgba(0, 217, 255, 0.2),
+        rgba(191, 0, 255, 0.2)
+      );
+      border-block: 2px solid #00d9ff;
+      border-inline: none;
 
-    @keyframes bgInfinit {
-      0% {
-        background: linear-gradient(
-      to right,
-      rgba(0, 217, 255, 0.2),
-      rgba(191, 0, 255, 0.2)
-    );
+      animation: bgInfinit 2.5s infinite ease-in-out;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+
+      @keyframes bgInfinit {
+        0% {
+          background: linear-gradient(
+            to right,
+            rgba(0, 217, 255, 0.2),
+            rgba(191, 0, 255, 0.2)
+          );
+        }
+        50% {
+          background: linear-gradient(
+            to left,
+            rgba(0, 217, 255, 0.2),
+            rgba(191, 0, 255, 0.2)
+          );
+        }
       }
-      50% {
-        background: linear-gradient(
-      to left,
-      rgba(0, 217, 255, 0.2),
-      rgba(191, 0, 255, 0.2)
-    );
-      }
-    }
 
-    &:hover {
-      transform: scale(1.05) translateY(-2px);
+      &:hover {
+        transform: scale(1.05) translateY(-2px);
+      }
+
+      &.btn_secondary {
+        font-size: 1.1rem;
+        padding: 0.4rem 2rem;
+        color: #ff4d8d;
+        border-block-color: #ff4d8d;
+        background: rgba(255, 77, 141, 0.12);
+        animation: none;
+      }
     }
   }
 }
