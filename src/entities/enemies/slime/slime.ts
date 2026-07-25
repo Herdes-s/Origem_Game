@@ -1,43 +1,66 @@
-import type { EnemyRaceConfig } from "../enemyTypes";
+import type { EnemyTierConfig } from "../enemyTypes";
+import type { AttributeWeights } from "../enemyLeveling";
 
-// RAÇA: SLIME
-// Atributos (FOR/DES/CON/RES/Precisão) substituem os antigos hpRange/
-// damageRange/speedRange — hp, dano e velocidade agora são DERIVADOS dos
-// atributos sorteados (mesma fórmula do player, entities/combat/
-// attributeFormulas.ts). Os ranges abaixo foram calibrados pra ficar perto
-// do balanceamento antigo (weak: hp 15-25, dano 3-6, vel 1.6-2.4 |
-// strong: hp 35-50, dano 8-12, vel 1.0-1.8), com RES e Precisão como
-// dimensões novas.
-export const SLIME_WEAK_CONFIG: EnemyRaceConfig = {
-  race: "slime",
-  spriteStyle: "directional",
-  attributeRanges: {
-    for: { min: 2, max: 4 },       // dano ~3-6
-    des: { min: 5, max: 8 },       // velocidade ~1.5-2.4
-    con: { min: 2, max: 4 },       // hp ~16-32
-    res: { min: 0, max: 2 },       // defesa ~0-1.2
-    precisao: { min: 0, max: 3 },  // crítico 0-6%
-  },
-  visionRadius: 180,
-  contactRadius: 36,
-  damageCooldown: 60,
-  color: "#4ade80",
-  xpReward: 8,
+// RAÇA: SLIME — "personalidade" tanque: peso bem mais alto em CON/RES do
+// que em DES, então tende a sair lento e resistente (ver enemyLeveling.ts
+// pra como o peso vira atributo de verdade).
+export const SLIME_ATTRIBUTE_WEIGHTS: AttributeWeights = {
+  for: 1,
+  des: 0.6,
+  con: 1.5,
+  res: 1.3,
 };
 
-export const SLIME_STRONG_CONFIG: EnemyRaceConfig = {
-  race: "slime",
-  spriteStyle: "directional",
-  attributeRanges: {
-    for: { min: 5, max: 8 },       // dano ~7.5-12
-    des: { min: 3, max: 6 },       // velocidade ~0.9-1.8 (mais lento que o fraco)
-    con: { min: 4, max: 6 },       // hp ~32-48
-    res: { min: 2, max: 5 },       // defesa ~1.2-3
-    precisao: { min: 2, max: 6 },  // crítico 4-12%
+// Hierarquia da raça: slime (vaga solto) → slimeHeroi (patrulha) →
+// bossSlime (patrulha, maior e mais raro). O MAPA decide quem nasce e em
+// que level (data/maps/*.ts) — aqui só ficam as características fixas do
+// "cargo". Sprite reaproveitado: ainda não existe arte própria pro tier
+// de chefão, então bossSlime usa a mesma sheet "forte" só que maior — até
+// ter sprite dedicado (mesmo espírito de placeholder do resto do jogo).
+export const SLIME_TIERS: Record<string, EnemyTierConfig> = {
+  slime: {
+    tier: "slime",
+    race: "slime",
+    label: "Slime",
+    spriteStyle: "directional",
+    spriteKey: "slime_weak",
+    sizeScale: 1,
+    behavior: "wander",
+    visionRadius: 180,
+    contactRadius: 36,
+    damageCooldown: 60,
+    color: "#4ade80",
+    xpReward: 8,
+    scoreReward: 10,
   },
-  visionRadius: 260,
-  contactRadius: 44,
-  damageCooldown: 50,
-  color: "#16a34a",
-  xpReward: 20,
+  slimeHeroi: {
+    tier: "slimeHeroi",
+    race: "slime",
+    label: "Slime Herói",
+    spriteStyle: "directional",
+    spriteKey: "slime_strong",
+    sizeScale: 1.25,
+    behavior: "patrol",
+    visionRadius: 260,
+    contactRadius: 44,
+    damageCooldown: 50,
+    color: "#16a34a",
+    xpReward: 20,
+    scoreReward: 25,
+  },
+  bossSlime: {
+    tier: "bossSlime",
+    race: "slime",
+    label: "★ Slime Chefão",
+    spriteStyle: "directional",
+    spriteKey: "slime_strong", // placeholder — reaproveita a sheet "forte", maior
+    sizeScale: 1.7,
+    behavior: "patrol",
+    visionRadius: 320,
+    contactRadius: 56,
+    damageCooldown: 40,
+    color: "#0f5132",
+    xpReward: 45,
+    scoreReward: 60,
+  },
 };

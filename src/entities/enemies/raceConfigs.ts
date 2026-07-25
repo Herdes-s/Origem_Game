@@ -1,13 +1,26 @@
-import type { EnemyRaceConfig } from "./enemyTypes";
+import type { EnemyTierConfig } from "./enemyTypes";
+import type { AttributeWeights } from "./enemyLeveling";
 import type { EnemyRace } from "../../data/maps/types";
-import { SLIME_WEAK_CONFIG, SLIME_STRONG_CONFIG } from "./slime/slime";
-import { GOBLIN_WEAK_CONFIG, GOBLIN_STRONG_CONFIG } from "./goblin/goblin";
+import { SLIME_ATTRIBUTE_WEIGHTS, SLIME_TIERS } from "./slime/slime";
+import { GOBLIN_ATTRIBUTE_WEIGHTS, GOBLIN_TIERS } from "./goblin/goblin";
 
-// Lookup central raça → config fraco/forte. O spawner (enemySpawner.ts)
-// usa isso pra resolver o EnemyRaceConfig de verdade a partir só do nome
-// da raça guardado no MapDefinition — adicionar uma raça nova é só
-// adicionar uma entrada aqui.
-export const RACE_CONFIGS: Record<EnemyRace, { weak: EnemyRaceConfig; strong: EnemyRaceConfig }> = {
-  slime: { weak: SLIME_WEAK_CONFIG, strong: SLIME_STRONG_CONFIG },
-  goblin: { weak: GOBLIN_WEAK_CONFIG, strong: GOBLIN_STRONG_CONFIG },
+// Lookup central raça → { tier → config }. O spawner (enemySpawner.ts) e o
+// covil (spawnDen.ts) usam isso pra resolver o EnemyTierConfig de verdade
+// a partir só do par (raça, tier) guardado no MapDefinition — adicionar
+// uma raça nova é só adicionar uma entrada aqui.
+export const RACE_TIERS: Record<EnemyRace, Record<string, EnemyTierConfig>> = {
+  slime: SLIME_TIERS,
+  goblin: GOBLIN_TIERS,
 };
+
+// "Personalidade" de atributo de cada raça (ver enemyLeveling.ts) — é
+// RAÇA, não tier: um slimeHeroi tem a mesma tendência de um slime comum,
+// só que com mais pontos (level mais alto) pra distribuir.
+export const RACE_ATTRIBUTE_WEIGHTS: Record<EnemyRace, AttributeWeights> = {
+  slime: SLIME_ATTRIBUTE_WEIGHTS,
+  goblin: GOBLIN_ATTRIBUTE_WEIGHTS,
+};
+
+export function getTierConfig(race: EnemyRace, tier: string): EnemyTierConfig | undefined {
+  return RACE_TIERS[race]?.[tier];
+}

@@ -9,10 +9,6 @@ import { playCrit, playEnemyDeath, playHit } from "../audio/soundEngine";
 // Frames que o número de dano fica visível
 const DAMAGE_NUMBER_LIFETIME = 50;
 
-// Pontos ganhos ao matar cada variante
-const SCORE_WEAK = 10;
-const SCORE_STRONG = 25;
-
 // ── HITBOX ────────────────────────────────────────────────────────────────────
 // Calcula o retângulo da hitbox baseado na posição e direção do player
 function getHitbox(pos: Position, dir: string) {
@@ -202,7 +198,7 @@ export function updatePlayerMovement(
 
           playEnemyDeath(enemy.race);
 
-          hud.score += enemy.variant === "strong" ? SCORE_STRONG : SCORE_WEAK;
+          hud.score += enemy.scoreReward;
           xpGained += enemy.xpReward;
         }
       }

@@ -1,17 +1,26 @@
 import type { TileMap } from "../../types/game";
+import type { LevelRange } from "../../entities/enemies/enemyLeveling";
 
 export type EnemyRace = "slime" | "goblin";
 
-// Inimigos fracos que nascem em posições aleatórias nesse mapa
-export type WeakSpawnConfig = {
+// Inimigos que nascem em posições ALEATÓRIAS nesse mapa — o comportamento
+// (vagar solto) vem do próprio tier (ver entities/enemies/enemyTypes.ts),
+// não é mais escolhido aqui. Cada instância sorteia o próprio level
+// dentro de `levelRange` (entities/enemies/enemyLeveling.ts).
+export type WanderSpawnConfig = {
   race: EnemyRace;
+  tier: string; // chave do tier dentro da raça (ex: "slime", "goblin")
   count: number;
+  levelRange: LevelRange;
 };
 
-// Inimigos fortes com patrulha fixa — [tileX, tileY, patrolToTileX, patrolToTileY]
-export type StrongPatrolConfig = {
+// Inimigos com patrulha FIXA — [tileX, tileY, patrolToTileX, patrolToTileY].
+// O comportamento (patrulhar) também vem do tier, não é escolhido aqui.
+export type PatrolSpawnConfig = {
   race: EnemyRace;
+  tier: string; // ex: "slimeHeroi", "bossSlime"
   patrol: [number, number, number, number];
+  levelRange: LevelRange;
 };
 
 // Um portal é um tile (TILE.PORTAL) que teleporta o player pra outro
@@ -30,7 +39,7 @@ export type MapDefinition = {
   tiles: TileMap;
   startTx: number; // onde o player aparece nesse mapa numa partida nova
   startTy: number;
-  weakSpawns: WeakSpawnConfig[];
-  strongPatrols: StrongPatrolConfig[];
+  wanderSpawns: WanderSpawnConfig[];
+  patrolSpawns: PatrolSpawnConfig[];
   portals: Portal[];
 };

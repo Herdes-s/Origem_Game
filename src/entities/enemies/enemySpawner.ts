@@ -4,7 +4,8 @@ import type { Enemy } from "./enemyTypes";
 import { createEnemy } from "./enemyFactory";
 import { createSpawnDen, type SpawnDen } from "./spawnDen";
 import { getCurrentMap } from "../../data/maps";
-import { RACE_CONFIGS } from "./raceConfigs";
+import { getTierConfig } from "./raceConfigs";
+import { rollLevelInRange } from "./enemyLeveling";
 import type { TileMap } from "../../types/game";
 
 const SPAWN_MARGIN_TILES = 2;
@@ -65,35 +66,43 @@ function randomSafeTile(
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
-// Cria a leva de inimigos do mapa ATUAL, a partir do weakSpawns/
-// strongPatrols definidos no MapDefinition (data/maps/*.ts) — trocar de
+// Cria a leva de inimigos do mapa ATUAL, a partir do wanderSpawns/
+// patrolSpawns definidos no MapDefinition (data/maps/*.ts) — trocar de
 // fase muda automaticamente quem nasce, sem precisar tocar nesse arquivo.
+// Cada instância resolve o EnemyTierConfig via (raça, tier) e sorteia o
+// próprio level dentro do levelRange daquela entrada do mapa.
 export function spawnEnemies(): Enemy[] {
   const map = getCurrentMap();
   const enemies: Enemy[] = [];
   const safeTiles = getSafeTiles(map.tiles);
   const origin = getMapStartPixel();
 
-  for (const {race, count} of map.weakSpawns) {
-    const config = RACE_CONFIGS[race].weak;
+  for (const { race, tier, count, levelRange } of map.wanderSpawns) {
+    const tierConfig = getTierConfig(race, tier);
+    if (!tierConfig) continue; // tier inválido/removido — não quebra o spawn dos outros
+
     for (let i = 0; i < count; i++) {
       const tile = randomSafeTile(safeTiles, origin.x, origin.y);
       if (!tile) continue;
-      enemies.push(createEnemy(config, "weak", tile.x, tile.y));
+      const level = rollLevelInRange(levelRange);
+      enemies.push(createEnemy(tierConfig, level, tile.x, tile.y));
     }
   }
 
-  for (const {race, patrol} of map.strongPatrols) {
+  for (const { race, tier, patrol, levelRange } of map.patrolSpawns) {
     const [tx, ty, btx, bty] = patrol;
-    if (!isSafeSpawnTile(map.tiles, tx, ty) || !isSafeSpawnTile(map.tiles, btx, bty)) continue
+    if (!isSafeSpawnTile(map.tiles, tx, ty) || !isSafeSpawnTile(map.tiles, btx, bty)) continue;
 
-    const config = RACE_CONFIGS[race].strong;
+    const tierConfig = getTierConfig(race, tier);
+    if (!tierConfig) continue;
+
     const x = tx * TILE_SIZE + TILE_SIZE / 2;
     const y = ty * TILE_SIZE + TILE_SIZE / 2;
     const bx = btx * TILE_SIZE + TILE_SIZE / 2;
     const by = bty * TILE_SIZE + TILE_SIZE / 2;
 
-    enemies.push(createEnemy(config, "strong", x, y, { x, y }, { x: bx, y: by }));
+    const level = rollLevelInRange(levelRange);
+    enemies.push(createEnemy(tierConfig, level, x, y, { x, y }, { x: bx, y: by }));
   }
 
   return enemies;
@@ -101,13 +110,26 @@ export function spawnEnemies(): Enemy[] {
 
 // Cria um covil pra cada tile TILE.SPAWN_CAVE encontrado no mapa. Chamado
 // uma vez ao montar o GamePage — os covis são fixos no mapa, diferente dos
-// inimigos, que vêm e vão.
+// inimigos, que vêm e vão. Hoje todo covil nasce sempre slime no tier
+// base ("slime") — o level que ele respawna usa o mesmo levelRange do
+// wanderSpawns de slime/"slime" já definido pro mapa (fallback 1-3 se o
+// mapa não tiver essa entrada). Associar o covil a uma raça/tier
+// diferente por tile é um passo futuro (hoje TILE.SPAWN_CAVE não carrega
+// essa informação).
 export function spawnDensFromMap(): SpawnDen[] {
   const map = getCurrentMap();
+  const denSpawnConfig = map.wanderSpawns.find(
+    (s) => s.race === "slime" && s.tier === "slime",
+  );
+  const levelRange = denSpawnConfig?.levelRange ?? { min: 1, max: 3 };
+
   return findTileCoords(map.tiles, TILE.SPAWN_CAVE).map(({ tx, ty }) =>
-    createSpawnDen({
-      x: tx * TILE_SIZE + TILE_SIZE / 2,
-      y: ty * TILE_SIZE + TILE_SIZE / 2,
-    }),
+    createSpawnDen(
+      {
+        x: tx * TILE_SIZE + TILE_SIZE / 2,
+        y: ty * TILE_SIZE + TILE_SIZE / 2,
+      },
+      levelRange,
+    ),
   );
 }

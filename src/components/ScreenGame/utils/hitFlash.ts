@@ -17,6 +17,8 @@ export function drawSpriteWithHitFlash(
   destX: number,
   destY: number,
   flashAlpha: number, // 0 a 1 — já calculado como (timer / duration) * intensidade
+  destW: number = frameW, // opcional — permite desenhar maior/menor que o frame de origem (ex: sizeScale de tier de inimigo). Default = sem escala, mesmo comportamento de antes.
+  destH: number = frameH,
 ) {
   flashCtx.clearRect(0, 0, flashCanvas.width, flashCanvas.height);
 
@@ -29,6 +31,7 @@ export function drawSpriteWithHitFlash(
   flashCtx.fillRect(0, 0, frameW, frameH);
   flashCtx.globalCompositeOperation = "source-over";
 
-  // 3. Copia o resultado para o canvas principal
-  ctx.drawImage(flashCanvas, destX, destY);
+  // 3. Copia o resultado para o canvas principal — escalando se destW/destH
+  // vierem diferentes do frame de origem
+  ctx.drawImage(flashCanvas, 0, 0, frameW, frameH, destX, destY, destW, destH);
 }

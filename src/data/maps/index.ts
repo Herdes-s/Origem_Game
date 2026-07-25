@@ -2,7 +2,7 @@ import type { MapDefinition } from "./types";
 import { CAVERNA } from "./caverna";
 import { FLORESTA } from "./floresta";
 
-export type { MapDefinition, Portal, WeakSpawnConfig, StrongPatrolConfig, EnemyRace } from "./types";
+export type { MapDefinition, Portal, WanderSpawnConfig, PatrolSpawnConfig, EnemyRace } from "./types";
 
 export const MAPS: Record<string, MapDefinition> = {
   caverna: CAVERNA,

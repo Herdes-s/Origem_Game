@@ -5,41 +5,31 @@ import {
   type PrimaryAttributes,
   type SecondaryAttributes,
 } from "../combat/attributeFormulas";
+import {
+  rollPrimaryAttributesForLevel,
+  type AttributeWeights,
+} from "./enemyLeveling";
 
 export type EnemyAttributes = {
   primary: PrimaryAttributes;
   secondary: SecondaryAttributes;
 };
 
-export type AttributeRange = { min: number; max: number };
+// Precisão fica fixa por enquanto (mesmo baseline inicial do player) —
+// diferente dos primários, não recebe pontos de level. Fácil de deixar
+// escalar por tier futuramente (um `precisaoBonus` no EnemyTierConfig),
+// mas não precisou disso ainda pra sentir a diferença entre tiers.
+const BASE_PRECISAO = 5;
 
-// Range de cada atributo pra uma raça/variante — cada inimigo que nasce
-// sorteia um valor dentro desse intervalo, então dois slimes fracos não
-// saem idênticos.
-export type EnemyAttributeRanges = {
-  for: AttributeRange;
-  des: AttributeRange;
-  con: AttributeRange;
-  res: AttributeRange;
-  precisao: AttributeRange;
-};
-
-function rollInRange(range: AttributeRange): number {
-  return Math.round(range.min + Math.random() * (range.max - range.min));
-}
-
-// Sorteia os atributos de um inimigo dentro dos ranges da raça/variante.
-export function rollEnemyAttributes(ranges: EnemyAttributeRanges): EnemyAttributes {
+// Sorteia os atributos de um inimigo pro level dado, com a "personalidade"
+// (AttributeWeights) da raça dele — ver enemyLeveling.ts pro sorteio em si.
+export function rollEnemyAttributesForLevel(
+  weights: AttributeWeights,
+  level: number,
+): EnemyAttributes {
   return {
-    primary: {
-      for: rollInRange(ranges.for),
-      des: rollInRange(ranges.des),
-      con: rollInRange(ranges.con),
-      res: rollInRange(ranges.res),
-    },
-    secondary: {
-      precisao: rollInRange(ranges.precisao),
-    },
+    primary: rollPrimaryAttributesForLevel(weights, level),
+    secondary: { precisao: BASE_PRECISAO },
   };
 }
 
@@ -53,6 +43,12 @@ const ENEMY_BASE: CombatBase = {
   knockbackForce: 0,
 };
 
-export function computeEnemyStats(attributes: EnemyAttributes): DerivedCombatStats {
-  return computeDerivedCombatStats(ENEMY_BASE, attributes.primary, attributes.secondary);
+export function computeEnemyStats(
+  attributes: EnemyAttributes,
+): DerivedCombatStats {
+  return computeDerivedCombatStats(
+    ENEMY_BASE,
+    attributes.primary,
+    attributes.secondary,
+  );
 }

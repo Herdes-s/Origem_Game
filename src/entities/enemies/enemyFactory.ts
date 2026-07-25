@@ -1,6 +1,7 @@
-import type { Enemy, EnemyRaceConfig, EnemyVariant } from "./enemyTypes";
+import type { Enemy, EnemyTierConfig } from "./enemyTypes";
 import type { Position } from "../../types/game";
-import { rollEnemyAttributes, computeEnemyStats } from "./enemyAttributes";
+import { rollEnemyAttributesForLevel, computeEnemyStats } from "./enemyAttributes";
+import { RACE_ATTRIBUTE_WEIGHTS } from "./raceConfigs";
 
 let nextId = 1;
 
@@ -9,30 +10,38 @@ function randBetween(min: number, max: number): number {
 }
 
 export function createEnemy(
-  config:   EnemyRaceConfig,
-  variant:  EnemyVariant,
-  x:        number,
-  y:        number,
-  patrolA?: Position,
-  patrolB?: Position,
+  tierConfig: EnemyTierConfig,
+  level:      number,
+  x:          number,
+  y:          number,
+  patrolA?:   Position,
+  patrolB?:   Position,
 ): Enemy {
-  // Sorteia os atributos (FOR/DES/CON/RES/Precisão) dentro dos ranges da
-  // raça/variante, e converte pra stats de combate com a mesma fórmula do
-  // player — dois inimigos da mesma variante não saem idênticos.
-  const attributes = rollEnemyAttributes(config.attributeRanges);
+  // Sorteia os atributos (FOR/DES/CON/RES/Precisão) pro level dado, com a
+  // personalidade (pesos) da raça, e converte pra stats de combate com a
+  // mesma fórmula do player — dois inimigos do mesmo tier/level não saem
+  // idênticos.
+  const weights = RACE_ATTRIBUTE_WEIGHTS[tierConfig.race];
+  const attributes = rollEnemyAttributesForLevel(weights, level);
   const stats = computeEnemyStats(attributes);
 
   const hp = Math.max(1, Math.round(stats.hpMax));
   const damage = stats.damage;
   const speed = parseFloat(stats.speed.toFixed(2));
 
-  const isStrong = variant === "strong" && patrolA && patrolB;
-  const behavior = isStrong ? "patrol" : "wander";
+  // Comportamento vem do TIER (não é mais calculado de fraco/forte) —
+  // tiers "patrol" exigem os dois pontos de patrulha pra valer, senão cai
+  // pra "wander" (mesma rede de segurança que já existia).
+  const isPatrol = tierConfig.behavior === "patrol" && patrolA && patrolB;
+  const behavior = isPatrol ? "patrol" : "wander";
 
   return {
-    id:      nextId++,
-    race:    config.race,
-    variant,
+    id:    nextId++,
+    race:  tierConfig.race,
+    tier:  tierConfig.tier,
+    tierLabel: tierConfig.label,
+    level,
+
     x,
     y,
     hp,
@@ -43,13 +52,20 @@ export function createEnemy(
     critChance: stats.critChance,
     critDamageMultiplier: stats.critDamageMultiplier,
     attributes,
-    visionRadius:        config.visionRadius,
-    contactRadius:       config.contactRadius,
-    damageCooldown:      config.damageCooldown,
+
+    sizeScale:           tierConfig.sizeScale,
+    spriteKey:           tierConfig.spriteKey,
+    visionRadius:        tierConfig.visionRadius,
+    contactRadius:       tierConfig.contactRadius,
+    damageCooldown:      tierConfig.damageCooldown,
     damageCooldownTimer: 0,
+
     behavior,
-    color: config.color,
-    xpReward: config.xpReward,
+    baseBehavior: behavior,
+
+    color: tierConfig.color,
+    xpReward: tierConfig.xpReward,
+    scoreReward: tierConfig.scoreReward,
 
     // Animação começa em idle, frame 0
     animState:  "idle",
@@ -63,9 +79,9 @@ export function createEnemy(
 
     deathAnimDone: false,
 
-    patrolA:      isStrong ? patrolA : undefined,
-    patrolB:      isStrong ? patrolB : undefined,
-    patrolTarget: isStrong ? "B"     : undefined,
+    patrolA:      isPatrol ? patrolA : undefined,
+    patrolB:      isPatrol ? patrolB : undefined,
+    patrolTarget: isPatrol ? "B"     : undefined,
 
     wanderDx:    behavior === "wander" ? (Math.random() * 2 - 1) : undefined,
     wanderDy:    behavior === "wander" ? (Math.random() * 2 - 1) : undefined,

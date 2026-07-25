@@ -238,7 +238,7 @@ export function updateEnemies(
     if (d <= enemy.visionRadius) {
       enemy.behavior = "chase";
     } else {
-      enemy.behavior = enemy.variant === "strong" ? "patrol" : "wander";
+      enemy.behavior = enemy.baseBehavior;
     }
 
     switch (enemy.behavior) {

@@ -32,16 +32,14 @@ export const CAVERNA: MapDefinition = {
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   ],
 
-  weakSpawns: [
-    { race: "slime", count: 6 },
-    { race: "goblin", count: 3 },
+  wanderSpawns: [
+    { race: "slime", tier: "slime", count: 6, levelRange: { min: 1, max: 5 } },
   ],
 
-  strongPatrols: [
-    { race: "slime", patrol: [8, 3, 19, 3] },
-    { race: "slime", patrol: [7, 8, 26, 8] },
-    { race: "slime", patrol: [9, 13, 9, 17] },
-    { race: "goblin", patrol: [10, 18, 20, 18] },
+  patrolSpawns: [
+    { race: "slime", tier: "slimeHeroi", patrol: [8, 3, 19, 3], levelRange: { min: 5, max: 10 } },
+    { race: "slime", tier: "slimeHeroi", patrol: [7, 8, 26, 8], levelRange: { min: 5, max: 10 } },
+    { race: "slime", tier: "slimeHeroi", patrol: [9, 13, 9, 17], levelRange: { min: 5, max: 10 } },
   ],
 
   portals: [

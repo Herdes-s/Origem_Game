@@ -30,14 +30,14 @@ export const FLORESTA: MapDefinition = {
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
   ],
 
-  weakSpawns: [
-    { race: "goblin", count: 5 }, // floresta favorece goblin (mais ágil, combina com o tema)
-    { race: "slime", count: 2 },
+  wanderSpawns: [
+    { race: "goblin", tier: "goblin", count: 5, levelRange: { min: 3, max: 8 } }, // floresta favorece goblin (mais ágil, combina com o tema)
+    { race: "slime", tier: "slime", count: 2, levelRange: { min: 3, max: 8 } },
   ],
 
-  strongPatrols: [
-    { race: "goblin", patrol: [4, 7, 4, 10] },
-    { race: "slime", patrol: [18, 7, 18, 10] },
+  patrolSpawns: [
+    { race: "goblin", tier: "goblinHeroi", patrol: [4, 7, 4, 10], levelRange: { min: 8, max: 14 } },
+    { race: "slime", tier: "slimeHeroi", patrol: [18, 7, 18, 10], levelRange: { min: 8, max: 14 } },
   ],
 
   portals: [

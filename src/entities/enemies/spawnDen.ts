@@ -1,16 +1,19 @@
 import type { Position } from "../../types/game";
-import type { Enemy, EnemyVariant } from "./enemyTypes";
+import type { Enemy } from "./enemyTypes";
 import { createEnemy } from "./enemyFactory";
-import { SLIME_WEAK_CONFIG, SLIME_STRONG_CONFIG } from "./slime/slime";
+import { SLIME_TIERS } from "./slime/slime";
+import { rollLevelInRange, type LevelRange } from "./enemyLeveling";
 
 // Um covil é um ponto fixo no mapa (marcado com TILE.SPAWN_CAVE) que
 // mantém sempre um inimigo vivo: quando o inimigo dele morre, o covil
-// espera `respawnDelay` frames e nasce outro no mesmo lugar.
+// espera `respawnDelay` frames e nasce outro no mesmo lugar. Hoje sempre
+// spawna slime no tier base ("slime") — cada respawn sorteia um level
+// novo dentro de `levelRange` (definido pelo mapa, ver enemySpawner.ts).
 export type SpawnDen = {
   id: number;
   x: number;
   y: number;
-  variant: EnemyVariant;
+  levelRange: LevelRange;
   respawnDelay: number; // frames de espera após a morte do inimigo do covil
   cooldownTimer: number; // contagem regressiva até poder nascer outro
   currentEnemyId: number | null; // id do inimigo vivo desse covil, ou null
@@ -20,14 +23,14 @@ let nextDenId = 1;
 
 export function createSpawnDen(
   pos: Position,
-  variant: EnemyVariant = "weak",
+  levelRange: LevelRange = { min: 1, max: 3 },
   respawnDelay = 180, // ~3s a 60fps
 ): SpawnDen {
   return {
     id: nextDenId++,
     x: pos.x,
     y: pos.y,
-    variant,
+    levelRange,
     respawnDelay,
     cooldownTimer: 0,
     currentEnemyId: null,
@@ -50,8 +53,8 @@ export function updateSpawnDens(dens: SpawnDen[], enemies: Enemy[], dt: number) 
       continue;
     }
 
-    const config = den.variant === "strong" ? SLIME_STRONG_CONFIG : SLIME_WEAK_CONFIG;
-    const enemy = createEnemy(config, den.variant, den.x, den.y);
+    const level = rollLevelInRange(den.levelRange);
+    const enemy = createEnemy(SLIME_TIERS.slime, level, den.x, den.y);
     enemy.denId = den.id;
 
     enemies.push(enemy);
