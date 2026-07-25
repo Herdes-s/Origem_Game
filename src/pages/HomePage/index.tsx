@@ -1,4 +1,4 @@
-import { FaPlay, FaShareAlt } from "react-icons/fa";
+import { FaHeart, FaPlay, FaShareAlt } from "react-icons/fa";
 import styles from "./HomePage.module.scss"
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +10,7 @@ function HomePage() {
             <p className={styles.sub_title}>O JOGO DAS HABILIDADES</p>
             <div className={styles.btn_group}>
                 <button className={styles.btn} onClick={() => navigate("/game")}><FaPlay /> Começar</button>
+                <button className={styles.btn} onClick={() => navigate("/doar")}><FaHeart /> Doar</button>
                 <button className={styles.btn} onClick={() => navigate("/apoie")}><FaShareAlt /> Redes Sociais</button>
             </div>
         </section>
