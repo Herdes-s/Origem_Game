@@ -6,6 +6,7 @@ import {
   type PrimaryAttributes as SharedPrimaryAttributes,
   type SecondaryAttributes as SharedSecondaryAttributes,
 } from "../combat/attributeFormulas";
+import { computeCarryCapacity, computeKnockbackMultiplier, computeSpeedMultiplier } from "../items/weight";
 
 // ── ATRIBUTOS PRIMÁRIOS ──────────────────────────────────────────────────
 // Recebem pontos de distribuição (level up). A fórmula que converte
@@ -26,7 +27,7 @@ export type PlayerAttributes = {
 
 export const DEFAULT_ATTRIBUTES: PlayerAttributes = {
   primary: { for: 5, des: 5, con: 5, res: 5 },
-  secondary: { precisao: 5 },
+  secondary: { precisao: 5, peso: 0 },
 };
 
 export type DerivedPlayerStats = DerivedCombatStats;
@@ -43,11 +44,17 @@ const PLAYER_BASE: CombatBase = {
 export function computeDerivedStats(
   attributes: PlayerAttributes,
 ): DerivedPlayerStats {
-  return computeDerivedCombatStats(
+  const stats = computeDerivedCombatStats(
     PLAYER_BASE,
     attributes.primary,
     attributes.secondary,
   );
+
+  const capacity = computeCarryCapacity(attributes.primary.for);
+  stats.speed *= computeSpeedMultiplier(attributes.secondary.peso, capacity);
+  stats.knockbackForce *= computeKnockbackMultiplier(attributes.secondary.peso, capacity);
+
+  return stats;
 }
 
 // Gasta 1 ponto de level up num atributo primário — retorna um objeto novo

@@ -26,6 +26,10 @@ export type AttackState = {
   direction: Direction; // direção do ataque
   hitFlash: number; // flash vermelho ao receber dano
   hitEnemyIds?: Set<number>;
+  // Velocidade residual de knockback RECEBIDO (empurrão do inimigo) —
+  // mesmo papel que enemy.knockbackX/Y cumpre pro lado do inimigo.
+  knockbackX: number;
+  knockbackY: number;
 };
 
 export type GameState = "playing" | "dead";

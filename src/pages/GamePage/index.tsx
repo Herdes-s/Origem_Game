@@ -81,9 +81,22 @@ function GamePage() {
   // pra renderizar. O ref abaixo é só um espelho pro game loop (RAF), que
   // não pode reagir a re-render e precisa ler o valor mais recente a cada
   // frame sem depender do React.
-  const [attributes, setAttributes] = useState<PlayerAttributes>(
-    savedGame?.attributes ?? DEFAULT_ATTRIBUTES,
-  );
+  const [attributes, setAttributes] = useState<PlayerAttributes>(() => {
+    const base = savedGame?.attributes ?? DEFAULT_ATTRIBUTES;
+    const startingInventory = savedGame?.inventory ?? createEmptyInventory();
+    // Blindagem pra save antigo sem `peso` em secondary (feature nova) —
+    // preenche o que faltar com o default, e recalcula peso a partir do
+    // inventário de verdade (fonte única), em vez de confiar num valor
+    // salvo que pode estar desatualizado.
+    return {
+      ...base,
+      secondary: {
+        ...DEFAULT_ATTRIBUTES.secondary,
+        ...base.secondary,
+        peso: computeInventoryWeight(startingInventory),
+      },
+    };
+  });
   const [progress, setProgress] = useState<PlayerProgress>(
     savedGame?.progress ?? DEFAULT_PROGRESS,
   );
@@ -130,6 +143,8 @@ function GamePage() {
     direction: "down",
     hitFlash: 0,
     hitEnemyIds: new Set(),
+    knockbackX: 0,
+    knockbackY: 0,
   });
 
   const directionRef = useRef("down");
@@ -195,7 +210,6 @@ function GamePage() {
     gameStateRef,
     attributesRef,
     densRef,
-    inventoryRef,
     onXpGained: handleXpGained,
     onPortalEnter: handlePortalEnter,
     onPlayerDeath: handlePlayerDeath,
@@ -239,18 +253,35 @@ function GamePage() {
   // mapa etc.), o InventoryPanel tem botões de item de teste que chamam
   // isso — só pra validar stack/slot/peso. addItem() já respeita
   // capacidade de carga (não deixa passar do limite).
+  //
+  // Peso (atributo secundário) é atualizado JUNTO do inventário, aqui no
+  // handler — não via useEffect reagindo a `inventory` (isso causaria uma
+  // cascata de re-render: um set dispara o outro). Assim os dois mudam
+  // numa render só, sempre em sincronia, e é o único lugar que precisa
+  // saber que peso vem do inventário — o resto do jogo só lê
+  // attributes.secondary.peso como qualquer outro atributo.
   const handleAddTestItem = (itemId: string) => {
     const capacity = computeCarryCapacity(attributesRef.current.primary.for);
-    const currentWeight = computeInventoryWeight(inventoryRef.current);
+    const currentWeight = attributesRef.current.secondary.peso;
+    const result = addItem(inventoryRef.current, itemId, 1, currentWeight, capacity);
 
-    setInventory((prev) => {
-      const result = addItem(prev, itemId, 1, currentWeight, capacity);
-      return result.inventory;
-    });
+    if (result.added <= 0) return;
+
+    setInventory(result.inventory);
+    setAttributes((prev) => ({
+      ...prev,
+      secondary: { ...prev.secondary, peso: computeInventoryWeight(result.inventory) },
+    }));
   };
 
   const handleDiscardItem = (slotIndex: number) => {
-    setInventory((prev) => removeItem(prev, slotIndex, 1));
+    const nextInventory = removeItem(inventoryRef.current, slotIndex, 1);
+
+    setInventory(nextInventory);
+    setAttributes((prev) => ({
+      ...prev,
+      secondary: { ...prev.secondary, peso: computeInventoryWeight(nextInventory) },
+    }));
   };
 
   const handleRespawn = () => {
@@ -267,6 +298,8 @@ function GamePage() {
       direction: "down",
       hitFlash: 0,
       hitEnemyIds: new Set(),
+      knockbackX: 0,
+      knockbackY: 0,
     };
     gameStateRef.current = "playing";
     saveGame(buildSnapshot());
@@ -289,7 +322,7 @@ function GamePage() {
       <div className={styles.top_bar}>
         <InventoryPanel
           inventory={inventory}
-          currentWeight={computeInventoryWeight(inventory)}
+          currentWeight={attributes.secondary.peso}
           carryCapacity={computeCarryCapacity(attributes.primary.for)}
           onAddTestItem={handleAddTestItem}
           onDiscard={handleDiscardItem}

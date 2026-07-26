@@ -5,6 +5,7 @@ import type { DerivedPlayerStats } from "./playerAttributes";
 import type { Enemy } from "../enemies/enemyTypes";
 import { nextDamageNumberId } from "../combat/damageNumberId";
 import { playCrit, playEnemyDeath, playHit } from "../audio/soundEngine";
+import { applyKnockback } from "../combat/knockback";
 
 // Frames que o número de dano fica visível
 const DAMAGE_NUMBER_LIFETIME = 50;
@@ -108,6 +109,12 @@ export function updatePlayerMovement(
 
   if (!wouldCollide(nextX, pos.y)) pos.x = nextX;
   if (!wouldCollide(pos.x, nextY)) pos.y = nextY;
+
+  // Empurrão recebido de inimigo (velocidade residual guardada em
+  // attack.knockbackX/Y por enemyAI.ts) — soma no MESMO frame que o
+  // movimento por teclado, igual o inimigo já processa IA + knockback
+  // juntos em updateEnemies.
+  applyKnockback(pos, attack, dt, PLAYER_CONFIG.knockbackDecay);
 
   // ── ATAQUE ────────────────────────────────────────────────
   // Decrementa cooldown pelo tempo real decorrido, não por 1 fixo

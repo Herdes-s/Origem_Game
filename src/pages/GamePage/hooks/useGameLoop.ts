@@ -17,13 +17,7 @@ import { playPlayerDeath } from "../../../entities/audio/soundEngine";
 import { getCurrentMap, type Portal } from "../../../data/maps";
 import { TILE_SIZE } from "../../../data/map";
 import { computeDeltaScale } from "../../../entities/combat/deltaTime";
-import type { Inventory } from "../../../entities/items/itemTypes";
-import { computeInventoryWeight } from "../../../entities/items/inventory";
-import {
-  computeCarryCapacity,
-  computeKnockbackMultiplier,
-  computeSpeedMultiplier,
-} from "../../../entities/items/weight";
+import { computeCarryCapacity, computeKnockbackMultiplier } from "../../../entities/items/weight";
 
 const PORTAL_COOLDOWN_FRAMES = 30; // ~0.5s — evita re-teleportar no mesmo frame/instante
 
@@ -38,7 +32,6 @@ type Args = {
   gameStateRef: React.RefObject<GameState>;
   attributesRef: React.RefObject<PlayerAttributes>;
   densRef: React.RefObject<SpawnDen[]>;
-  inventoryRef: React.RefObject<Inventory>;
   onXpGained: (amount: number) => void;
   onPortalEnter: (portal: Portal) => void;
   onPlayerDeath: () => void;
@@ -59,7 +52,6 @@ export function useGameLoop({
   gameStateRef,
   attributesRef,
   densRef,
-  inventoryRef,
   onXpGained,
   onPortalEnter,
   onPlayerDeath,
@@ -73,22 +65,22 @@ export function useGameLoop({
       const dt = computeDeltaScale(timestamp, lastTimeRef);
 
       if (gameStateRef.current === "playing") {
-        // Stats derivados dos atributos atuais (FOR/DES/CON/Precisão).
-        // Recalcular por frame é barato (só aritmética) e mantém a HUD e o
-        // combate sempre em dia com o que estiver em attributesRef — inclui
-        // futuras mudanças por level up sem precisar de plumbing extra.
+        // Stats derivados dos atributos atuais (FOR/DES/CON/Precisão +
+        // Peso, esse último já aplicando a penalidade de carga por dentro
+        // de computeDerivedStats — ver playerAttributes.ts). Recalcular
+        // por frame é barato e mantém a HUD e o combate sempre em dia com
+        // o que estiver em attributesRef.
         const stats = computeDerivedStats(attributesRef.current);
         hudRef.current.hpMax = stats.hpMax;
 
-        // Peso é o nêmese da velocidade: quanto mais perto da capacidade
-        // de carga (escala com FOR) o inventário estiver, mais lento o
-        // player fica e mais fraco sai o knockback do golpe. Recalcular
-        // por frame é barato (mesmo raciocínio de computeDerivedStats) e
-        // mantém tudo em dia com o inventário sem plumbing extra.
+        // Multiplicador de peso pro knockback RECEBIDO (o DADO já vem
+        // embutido em stats.knockbackForce) — mesma fórmula, reaproveitada
+        // na direção contrária: carregado, é mais fácil de ser empurrado.
         const carryCapacity = computeCarryCapacity(attributesRef.current.primary.for);
-        const currentWeight = computeInventoryWeight(inventoryRef.current);
-        stats.speed *= computeSpeedMultiplier(currentWeight, carryCapacity);
-        stats.knockbackForce *= computeKnockbackMultiplier(currentWeight, carryCapacity);
+        const weightMultiplier = computeKnockbackMultiplier(
+          attributesRef.current.secondary.peso,
+          carryCapacity,
+        );
 
         // Movimento do player — lógica isolada em playerMovement.ts
         const xpGained = updatePlayerMovement(
@@ -112,6 +104,7 @@ export function useGameLoop({
           hudRef.current,
           attackRef,
           stats.defense,
+          weightMultiplier,
           damageNumbersRef.current,
           dt,
         );
@@ -171,7 +164,6 @@ export function useGameLoop({
     gameStateRef,
     attributesRef,
     densRef,
-    inventoryRef,
     onXpGained,
     onPortalEnter,
     onPlayerDeath,

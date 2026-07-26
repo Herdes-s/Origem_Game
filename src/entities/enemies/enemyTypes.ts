@@ -55,6 +55,7 @@ export type Enemy = {
   hpMax: number;
   damage: number;
   speed: number;
+  knockbackForce: number; // força do empurrão que esse inimigo APLICA no player ao acertar (vem do FOR dele)
   defense: number; // reduz o dano recebido do player (vem de RES)
   critChance: number; // 0 a 1 — chance de crítico ao atacar o player
   critDamageMultiplier: number;

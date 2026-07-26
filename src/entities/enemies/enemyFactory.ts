@@ -48,6 +48,7 @@ export function createEnemy(
     hpMax:  hp,
     damage,
     speed,
+    knockbackForce: stats.knockbackForce,
     defense: stats.defense,
     critChance: stats.critChance,
     critDamageMultiplier: stats.critDamageMultiplier,

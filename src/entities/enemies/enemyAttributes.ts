@@ -29,7 +29,7 @@ export function rollEnemyAttributesForLevel(
 ): EnemyAttributes {
   return {
     primary: rollPrimaryAttributesForLevel(weights, level),
-    secondary: { precisao: BASE_PRECISAO },
+    secondary: { precisao: BASE_PRECISAO, peso: 0 },
   };
 }
 

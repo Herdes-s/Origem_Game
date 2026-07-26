@@ -5,7 +5,11 @@ import type {
 } from "../../entities/player/playerAttributes";
 import { computeDerivedStats } from "../../entities/player/playerAttributes";
 import type { PlayerProgress } from "../../entities/player/playerProgress";
-import { computeCarryCapacity } from "../../entities/items/weight";
+import {
+  computeCarryCapacity,
+  computeSpeedMultiplier,
+  computeKnockbackMultiplier,
+} from "../../entities/items/weight";
 import styles from "./StatusPanel.module.scss";
 
 type Props = {
@@ -151,6 +155,28 @@ function StatusPanel({ attributes, progress, onAllocate }: Props) {
                 <small>
                   {Math.round(stats.critChance * 100)}% chance de crítico · x
                   {stats.critDamageMultiplier} de dano
+                </small>
+              </li>
+              <li>
+                <span>Peso</span>
+                <strong>
+                  {attributes.secondary.peso.toFixed(1)} / {computeCarryCapacity(attributes.primary.for).toFixed(1)}
+                </strong>
+                <small>
+                  {Math.round(
+                    computeSpeedMultiplier(
+                      attributes.secondary.peso,
+                      computeCarryCapacity(attributes.primary.for),
+                    ) * 100,
+                  )}
+                  % de velocidade ·{" "}
+                  {Math.round(
+                    computeKnockbackMultiplier(
+                      attributes.secondary.peso,
+                      computeCarryCapacity(attributes.primary.for),
+                    ) * 100,
+                  )}
+                  % de knockback (dado e recebido)
                 </small>
               </li>
             </ul>

@@ -13,6 +13,13 @@ export type PrimaryAttributes = {
 
 export type SecondaryAttributes = {
   precisao: number; // Precisão — chance de acerto crítico
+  // Peso ATUAL carregado — nêmese da velocidade (e do knockback dado/
+  // recebido). Só o player de fato acumula isso (via inventário, ver
+  // entities/items/weight.ts); inimigo sempre fica em 0 (nunca penaliza).
+  // Vive aqui (tipo compartilhado) porque futuras fontes de peso
+  // (equipamento, debuff, poção) vão querer ler/escrever isso como
+  // qualquer outro atributo, não só o inventário.
+  peso: number;
 };
 
 // Quanto cada ponto de atributo vale em stat de jogo. Único lugar que

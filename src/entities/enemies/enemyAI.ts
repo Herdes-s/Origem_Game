@@ -4,13 +4,14 @@ import type {
   HudState,
   Position,
 } from "../../types/game";
-import { wouldCollide } from "../../utils/collision";
 import { PLAYER_CONFIG } from "../player/player";
 import type { Enemy } from "./enemyTypes";
 import { SLIME_FRAME_SPEED } from "./slime/slimeSprite";
 import { GOBLIN_FRAME_SPEED } from "./goblin/goblinSprite";
 import { nextDamageNumberId } from "../combat/damageNumberId";
 import { playHurt } from "../audio/soundEngine";
+import { applyKnockback, computeIncomingKnockback } from "../combat/knockback";
+import { wouldCollide } from "../../utils/collision";
 
 // Frames que o número de dano fica visível — mesmo valor de playerMovement.ts
 const DAMAGE_NUMBER_LIFETIME = 50;
@@ -56,28 +57,7 @@ function moveEnemy(enemy: Enemy, dx: number, dy: number, dt: number) {
   if (!wouldCollide(enemy.x, nextY)) enemy.y = nextY;
 }
 
-// KNOCKBACK
-function apllyKnockback(enemy: Enemy, dt: number) {
-  if (Math.abs(enemy.knockbackX) < 0.1) enemy.knockbackX = 0;
-  if (Math.abs(enemy.knockbackY) < 0.1) enemy.knockbackY = 0;
-  if (enemy.knockbackX === 0 && enemy.knockbackY === 0) return;
-
-  const nextX = enemy.x + enemy.knockbackX * dt;
-  const nextY = enemy.y + enemy.knockbackY * dt;
-
-  if (!wouldCollide(nextX, enemy.y)) enemy.x = nextX;
-  else enemy.knockbackX = 0;
-
-  if (!wouldCollide(enemy.x, nextY)) enemy.y = nextY;
-  else enemy.knockbackY = 0;
-
-  // Decaimento é uma taxa (não uma subtração fixa), então precisa de
-  // exponenciação pra continuar correto quando dt varia — multiplicar
-  // direto por 0.8 toda vez só funciona a um ritmo de frame constante.
-  const decay = Math.pow(PLAYER_CONFIG.knockbackDecay, dt);
-  enemy.knockbackX *= decay;
-  enemy.knockbackY *= decay;
-}
+// KNOCKBACK — lógica compartilhada com o player, ver entities/combat/knockback.ts
 
 // ANIMAÇÂO
 function updateAnimation(enemy: Enemy, dt: number) {
@@ -143,6 +123,7 @@ function tryDamagePlayer(
   hud: HudState,
   attackRef: React.RefObject<AttackState>,
   defense: number,
+  weightMultiplier: number, // peso do player reduzindo o knockback recebido (ver entities/items/weight.ts)
   damageNumbers: DamageNumber[],
   dt: number,
 ) {
@@ -176,6 +157,14 @@ function tryDamagePlayer(
 
     if (attackRef.current) {
       attackRef.current.hitFlash = PLAYER_CONFIG.hitFlashDuration;
+
+      // Empurra o PLAYER na direção inimigo→player — força vem do FOR do
+      // inimigo (enemy.knockbackForce), amortecida pela RES do player e
+      // multiplicada pelo peso dele (ver entities/combat/knockback.ts)
+      const [ndx, ndy] = normalize(player.x - enemy.x, player.y - enemy.y);
+      const force = computeIncomingKnockback(enemy.knockbackForce, defense, weightMultiplier);
+      attackRef.current.knockbackX = ndx * force;
+      attackRef.current.knockbackY = ndy * force;
     }
 
     if (enemy.knockbackX === 0 && enemy.knockbackY === 0) {
@@ -193,13 +182,14 @@ export function updateEnemies(
   hud: HudState,
   attackRef: React.RefObject<AttackState>,
   defense: number,
+  weightMultiplier: number, // peso do player — reduz o knockback RECEBIDO (mesmo multiplicador do DADO)
   damageNumbers: DamageNumber[],
   dt: number,
 ) {
   for (const enemy of enemies) {
     if (enemy.hitFlashTimer > 0) enemy.hitFlashTimer -= dt;
 
-    apllyKnockback(enemy, dt);
+    applyKnockback(enemy, enemy, dt, PLAYER_CONFIG.knockbackDecay);
 
     if (enemy.hp <= 0) {
       if (enemy.animState !== "death") {
@@ -227,6 +217,7 @@ export function updateEnemies(
         hud,
         attackRef,
         defense,
+        weightMultiplier,
         damageNumbers,
         dt,
       );
@@ -253,7 +244,7 @@ export function updateEnemies(
         break;
     }
 
-    tryDamagePlayer(enemy, player, hud, attackRef, defense, damageNumbers, dt);
+    tryDamagePlayer(enemy, player, hud, attackRef, defense, weightMultiplier, damageNumbers, dt);
     updateAnimation(enemy, dt);
   }
 }
