@@ -13,11 +13,45 @@
   // estreito, onde centralizar horizontalmente sozinho não bastava (a
   // barra podia cair em cima da HP à esquerda).
   top: 46px;
-  left: 50%;
-  transform: translateX(-50%);
   z-index: 20;
 
+  // Centraliza via left:0/right:0 + justify-content, NÃO via transform:
+  // um elemento com `transform` vira a "âncora" de qualquer descendente
+  // `position: fixed` (é assim que a spec de CSS funciona — deixa de ser
+  // relativo à tela inteira). Isso já quebrou o ícone de arrastar item do
+  // InventoryPanel (aparecia longe do dedo) e o próprio painel dele
+  // (aparecia centralizado em vez de encostado à esquerda). Sem
+  // transform aqui, tudo que for fixed lá dentro (painel, ícone
+  // arrastando, confirmação) volta a se posicionar relativo à tela de
+  // verdade.
+  left: 0;
+  right: 0;
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
+}
+
+// Botão flutuante "Coletar" — aparece/some conforme a proximidade de um
+// item largado no mundo (ver useGameLoop.ts, detecção por frame com
+// aviso só na borda de mudança). Fica no rodapé central, acima da faixa
+// que o D-pad/ataque mobile ocupam (ControlGame.module.scss: ~84px de
+// botão + 2rem de padding ≈ 116px do fundo), pra nunca sobrepor.
+.collect_button {
+  position: fixed;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid #eab308;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(2px);
+
+  color: #fde68a;
+  font: bold 13px monospace;
+  cursor: pointer;
+  white-space: nowrap;
 }

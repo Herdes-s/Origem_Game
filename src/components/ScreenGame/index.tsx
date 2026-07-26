@@ -11,6 +11,7 @@ import styles from "./ScreenGame.module.scss";
 import { TILE_SIZE } from "../../data/map";
 import { getCurrentMap } from "../../data/maps";
 import type { Enemy } from "../../entities/enemies/enemyTypes";
+import type { ItemPickup } from "../../entities/items/world/itemPickup";
 
 import { useScreenSize } from "./hooks/useScreenSize";
 import { useGameSprites } from "./hooks/useGameSprites";
@@ -20,6 +21,7 @@ import { usePlayerAnimation } from "./animation/usePlayerAnimation";
 
 import { renderMap } from "./render/renderMap";
 import { renderEnemies } from "./render/renderEnemies";
+import { renderPickups } from "./render/renderPickups";
 import { renderPlayer } from "./render/renderPlayer";
 import { renderDamageNumbers } from "./render/renderDamageNumbers";
 import { renderHud } from "./render/renderHud";
@@ -37,6 +39,7 @@ type Props = {
   keysRef: React.RefObject<GameKeys>;
   hudRef: React.RefObject<HudState>;
   enemiesRef: React.RefObject<Enemy[]>;
+  pickupsRef: React.RefObject<ItemPickup[]>;
   attackRef: React.RefObject<AttackState>;
   directionRef: React.RefObject<string>;
   gameStateRef: React.RefObject<GameState>;
@@ -53,6 +56,7 @@ function ScreenGame({
   keysRef,
   hudRef,
   enemiesRef,
+  pickupsRef,
   attackRef,
   directionRef,
   gameStateRef,
@@ -126,6 +130,9 @@ function ScreenGame({
 
       // 1 MAPA
       renderMap(ctx, activeMap.tiles, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
+
+      // 1.5 ITENS NO CHÃO — desenhados sobre o mapa, mas sob os inimigos/player
+      renderPickups(ctx, pickupsRef.current, camX, camY, SCREEN_W, SCREEN_H);
 
       // 2 INIMIGOS
       renderEnemies(
@@ -207,6 +214,7 @@ function ScreenGame({
     keysRef,
     hudRef,
     enemiesRef,
+    pickupsRef,
     attackRef,
     directionRef,
     gameStateRef,

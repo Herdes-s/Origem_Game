@@ -18,6 +18,7 @@ import { getCurrentMap, type Portal } from "../../../data/maps";
 import { TILE_SIZE } from "../../../data/map";
 import { computeDeltaScale } from "../../../entities/combat/deltaTime";
 import { computeCarryCapacity, computeKnockbackMultiplier } from "../../../entities/items/weight";
+import { findNearestPickup, type ItemPickup } from "../../../entities/items/world/itemPickup";
 
 const PORTAL_COOLDOWN_FRAMES = 30; // ~0.5s — evita re-teleportar no mesmo frame/instante
 
@@ -32,9 +33,11 @@ type Args = {
   gameStateRef: React.RefObject<GameState>;
   attributesRef: React.RefObject<PlayerAttributes>;
   densRef: React.RefObject<SpawnDen[]>;
+  pickupsRef: React.RefObject<ItemPickup[]>;
   onXpGained: (amount: number) => void;
   onPortalEnter: (portal: Portal) => void;
   onPlayerDeath: () => void;
+  onNearbyPickupChange: (pickupId: number | null) => void;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -52,13 +55,19 @@ export function useGameLoop({
   gameStateRef,
   attributesRef,
   densRef,
+  pickupsRef,
   onXpGained,
   onPortalEnter,
   onPlayerDeath,
+  onNearbyPickupChange,
 }: Args) {
   const rafRef = useRef<number>(0);
   const portalCooldownRef = useRef(0);
   const lastTimeRef = useRef<number | null>(null);
+  // Guarda o último id avisado pro React, pra só chamar onNearbyPickupChange
+  // quando o valor realmente MUDA (não a cada frame) — evita re-render de
+  // 60fps só pra mostrar/esconder o botão "Coletar".
+  const lastNearbyPickupIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     const loop = (timestamp: number) => {
@@ -91,6 +100,7 @@ export function useGameLoop({
           directionRef,
           hudRef.current,
           damageNumbersRef.current,
+          pickupsRef.current,
           stats,
           dt,
         );
@@ -121,6 +131,16 @@ export function useGameLoop({
         damageNumbersRef.current = damageNumbersRef.current.filter(
           (dn) => dn.timer > 0,
         );
+
+        // Item largado mais próximo do player, dentro do alcance de coleta
+        // — só avisa o React (pra mostrar/esconder o botão "Coletar")
+        // quando o id muda, não a cada frame.
+        const nearestPickup = findNearestPickup(pickupsRef.current, posRef.current);
+        const nearestId = nearestPickup?.id ?? null;
+        if (nearestId !== lastNearbyPickupIdRef.current) {
+          lastNearbyPickupIdRef.current = nearestId;
+          onNearbyPickupChange(nearestId);
+        }
 
         if (portalCooldownRef.current > 0) {
           portalCooldownRef.current -= dt;
@@ -164,8 +184,10 @@ export function useGameLoop({
     gameStateRef,
     attributesRef,
     densRef,
+    pickupsRef,
     onXpGained,
     onPortalEnter,
     onPlayerDeath,
+    onNearbyPickupChange,
   ]);
 }

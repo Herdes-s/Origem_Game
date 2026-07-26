@@ -32,6 +32,7 @@ export const SLIME_TIERS: Record<string, EnemyTierConfig> = {
     color: "#4ade80",
     xpReward: 8,
     scoreReward: 10,
+    drop: { itemId: "pedaco_slime", chance: 1, min: 1, max: 2 },
   },
   slimeHeroi: {
     tier: "slimeHeroi",

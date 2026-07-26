@@ -45,9 +45,11 @@ import {
   addItem,
   computeInventoryWeight,
   createEmptyInventory,
+  moveItem,
   removeItem,
 } from "../../entities/items/inventory";
 import { computeCarryCapacity } from "../../entities/items/weight";
+import { createItemPickup, type ItemPickup } from "../../entities/items/world/itemPickup";
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
@@ -135,6 +137,18 @@ function GamePage() {
   const enemiesRef = useRef<Enemy[]>(spawnEnemies());
   const densRef = useRef<SpawnDen[]>(spawnDensFromMap());
   const damageNumbersRef = useRef<DamageNumber[]>([]);
+  // Itens largados no mundo (drop de inimigo, descarte do inventário) —
+  // mesmo padrão de enemiesRef: não entra no save, começa vazio a cada
+  // carregamento (ver entities/items/world/itemPickup.ts).
+  const pickupsRef = useRef<ItemPickup[]>([]);
+
+  // Só existe pra mostrar/esconder o botão "Coletar" — o game loop
+  // (useGameLoop) já faz a detecção de proximidade a 60fps em refs, e só
+  // chama isso quando o id realmente muda (ver onNearbyPickupChange).
+  const [nearbyPickupId, setNearbyPickupId] = useState<number | null>(null);
+  const handleNearbyPickupChange = useCallback((id: number | null) => {
+    setNearbyPickupId(id);
+  }, []);
 
   const attackRef = useRef<AttackState>({
     active: false,
@@ -187,6 +201,7 @@ function GamePage() {
     };
     enemiesRef.current = spawnEnemies();
     densRef.current = spawnDensFromMap();
+    pickupsRef.current = [];
     saveGame(buildSnapshot());
   }, []);
 
@@ -210,9 +225,11 @@ function GamePage() {
     gameStateRef,
     attributesRef,
     densRef,
+    pickupsRef,
     onXpGained: handleXpGained,
     onPortalEnter: handlePortalEnter,
     onPlayerDeath: handlePlayerDeath,
+    onNearbyPickupChange: handleNearbyPickupChange,
   });
 
   // Salva na hora quando atributos ou progresso mudam (level up, ponto
@@ -274,14 +291,60 @@ function GamePage() {
     }));
   };
 
-  const handleDiscardItem = (slotIndex: number) => {
-    const nextInventory = removeItem(inventoryRef.current, slotIndex, 1);
+  // Player confirmou coletar o pickup mais próximo (botão "Coletar" na
+  // tela, só aparece quando nearbyPickupId != null). addItem() já
+  // respeita capacidade de carga — se não couber tudo, o que sobrar
+  // simplesmente continua largado no mundo com a quantidade restante.
+  const handleCollectPickup = () => {
+    const pickup = pickupsRef.current.find((p) => p.id === nearbyPickupId);
+    if (!pickup) return;
+
+    const capacity = computeCarryCapacity(attributesRef.current.primary.for);
+    const currentWeight = attributesRef.current.secondary.peso;
+    const result = addItem(inventoryRef.current, pickup.itemId, pickup.quantity, currentWeight, capacity);
+
+    if (result.added <= 0) return; // nada coube, não faz nada (nem remove o pickup)
+
+    setInventory(result.inventory);
+    setAttributes((prev) => ({
+      ...prev,
+      secondary: { ...prev.secondary, peso: computeInventoryWeight(result.inventory) },
+    }));
+
+    if (result.added >= pickup.quantity) {
+      // coletou tudo — remove o pickup do mundo
+      pickupsRef.current = pickupsRef.current.filter((p) => p.id !== pickup.id);
+      setNearbyPickupId(null);
+    } else {
+      // coube só uma parte — o resto continua largado ali
+      pickup.quantity -= result.added;
+    }
+  };
+
+  // Reorganizar slots dentro do inventário (arrastar) — nunca muda o peso
+  // total (mesmos itens, só de posição), então não precisa resincronizar
+  // attributes.secondary.peso aqui.
+  const handleMoveItem = (from: number, to: number) => {
+    setInventory((prev) => moveItem(prev, from, to));
+  };
+
+  // Player confirmou descartar a pilha inteira de um slot (lixeira do
+  // InventoryPanel, com confirmação) — o item não é destruído de
+  // verdade, volta pro mundo como um ItemPickup na posição atual do
+  // player, pra poder ser recolhido depois se for o caso.
+  const handleConfirmDiscard = (slotIndex: number) => {
+    const slot = inventoryRef.current[slotIndex];
+    if (!slot) return;
+
+    const nextInventory = removeItem(inventoryRef.current, slotIndex, slot.quantity);
 
     setInventory(nextInventory);
     setAttributes((prev) => ({
       ...prev,
       secondary: { ...prev.secondary, peso: computeInventoryWeight(nextInventory) },
     }));
+
+    pickupsRef.current.push(createItemPickup(slot.itemId, slot.quantity, posRef.current));
   };
 
   const handleRespawn = () => {
@@ -291,6 +354,7 @@ function GamePage() {
     posRef.current = getMapStartPixel();
     hudRef.current.hp = computeDerivedStats(attributesRef.current).hpMax;
     enemiesRef.current = spawnEnemies();
+    pickupsRef.current = [];
     attackRef.current = {
       active: false,
       cooldown: 0,
@@ -312,6 +376,7 @@ function GamePage() {
         keysRef={keysRef}
         hudRef={hudRef}
         enemiesRef={enemiesRef}
+        pickupsRef={pickupsRef}
         attackRef={attackRef}
         directionRef={directionRef}
         gameStateRef={gameStateRef}
@@ -319,13 +384,19 @@ function GamePage() {
         onRespawn={handleRespawn}
       />
       <ControlGame keysRef={keysRef} />
+      {nearbyPickupId !== null && (
+        <button className={styles.collect_button} onClick={handleCollectPickup} type="button">
+          ✋ Coletar
+        </button>
+      )}
       <div className={styles.top_bar}>
         <InventoryPanel
           inventory={inventory}
           currentWeight={attributes.secondary.peso}
           carryCapacity={computeCarryCapacity(attributes.primary.for)}
           onAddTestItem={handleAddTestItem}
-          onDiscard={handleDiscardItem}
+          onMoveItem={handleMoveItem}
+          onConfirmDiscard={handleConfirmDiscard}
         />
         <StatusPanel
           attributes={attributes}

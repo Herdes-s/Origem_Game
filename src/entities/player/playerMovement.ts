@@ -6,6 +6,7 @@ import type { Enemy } from "../enemies/enemyTypes";
 import { nextDamageNumberId } from "../combat/damageNumberId";
 import { playCrit, playEnemyDeath, playHit } from "../audio/soundEngine";
 import { applyKnockback } from "../combat/knockback";
+import { createItemPickup, type ItemPickup } from "../items/world/itemPickup";
 
 // Frames que o número de dano fica visível
 const DAMAGE_NUMBER_LIFETIME = 50;
@@ -84,6 +85,7 @@ export function updatePlayerMovement(
   dirRef: { current: string }, // ref da direção vinda do ScreenGame
   hud: HudState,
   damageNumbers: DamageNumber[],
+  pickups: ItemPickup[], // itens largados no mundo — inimigo morto entra aqui
   stats: DerivedPlayerStats, // dano, velocidade, cooldown etc. já com bônus de atributos
   dt: number, // fator de escala de tempo (1.0 = ritmo normal a 60fps)
 ): number { // retorna o XP total ganho nesse frame (0 na maioria das vezes)
@@ -207,6 +209,16 @@ export function updatePlayerMovement(
 
           hud.score += enemy.scoreReward;
           xpGained += enemy.xpReward;
+
+          // Drop — rola a chance (config-driven, vem do tier via
+          // enemy.drop) e nasce como um ItemPickup no local da morte, não
+          // direto no inventário. Mesmo timing de XP/score: no golpe
+          // fatal, não depois da animação de morte terminar.
+          if (enemy.drop && Math.random() < enemy.drop.chance) {
+            const { min, max } = enemy.drop;
+            const quantity = Math.round(min + Math.random() * (max - min));
+            pickups.push(createItemPickup(enemy.drop.itemId, quantity, { x: enemy.x, y: enemy.y }));
+          }
         }
       }
     }

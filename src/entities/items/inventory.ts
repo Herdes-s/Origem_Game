@@ -1,4 +1,4 @@
-import { getItemDefinition } from "./itemDefinitions";
+import { getItemDefinition } from "./itemRegistry";
 import { INVENTORY_SIZE, type Inventory, type InventorySlot } from "./itemTypes";
 import { isOverCapacity } from "./weight";
 
@@ -83,8 +83,8 @@ export function addItem(
 }
 
 // Remove `quantity` de um slot específico (por índice) — usado ao
-// consumir/descartar item. Zera o slot (volta a null) se a quantidade
-// chegar a 0. Não muta, devolve array novo.
+// consumir item. Zera o slot (volta a null) se a quantidade chegar a 0.
+// Não muta, devolve array novo.
 export function removeItem(
   inventory: Inventory,
   slotIndex: number,
@@ -100,5 +100,52 @@ export function removeItem(
   target.quantity -= quantity;
   if (target.quantity <= 0) next[slotIndex] = null;
 
+  return next;
+}
+
+// Move o conteúdo do slot `from` pro slot `to` — usado pela interação de
+// arrastar dentro do InventoryPanel. Três casos:
+// 1) destino vazio → só move
+// 2) destino com o MESMO item → empilha o que couber (respeitando
+//    maxStack), o que sobrar fica no slot de origem
+// 3) destino com item DIFERENTE → troca os dois de lugar (swap)
+// Não muta, devolve array novo. Nunca muda o peso total (mesmos itens,
+// só de posição), então quem chama não precisa resincronizar peso.
+export function moveItem(
+  inventory: Inventory,
+  from: number,
+  to: number,
+): Inventory {
+  if (from === to) return inventory;
+
+  const fromSlot = inventory[from];
+  if (!fromSlot) return inventory;
+
+  const next = inventory.map((s) => (s ? { ...s } : null));
+  const toSlot = next[to];
+
+  if (!toSlot) {
+    next[to] = next[from];
+    next[from] = null;
+    return next;
+  }
+
+  if (toSlot.itemId === fromSlot.itemId) {
+    const def = getItemDefinition(fromSlot.itemId);
+    const maxStack = def?.maxStack ?? Infinity;
+    const space = maxStack - toSlot.quantity;
+    const move = Math.min(space, fromSlot.quantity);
+
+    if (move <= 0) return inventory; // destino já no máximo, não faz nada
+
+    next[to] = { ...toSlot, quantity: toSlot.quantity + move };
+    const remaining = fromSlot.quantity - move;
+    next[from] = remaining > 0 ? { ...fromSlot, quantity: remaining } : null;
+    return next;
+  }
+
+  // itens diferentes — troca de lugar
+  next[from] = toSlot;
+  next[to] = fromSlot;
   return next;
 }

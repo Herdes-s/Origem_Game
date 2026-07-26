@@ -67,6 +67,7 @@ export function createEnemy(
     color: tierConfig.color,
     xpReward: tierConfig.xpReward,
     scoreReward: tierConfig.scoreReward,
+    drop: tierConfig.drop,
 
     // Animação começa em idle, frame 0
     animState:  "idle",

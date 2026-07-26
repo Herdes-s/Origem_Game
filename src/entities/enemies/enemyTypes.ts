@@ -39,6 +39,17 @@ export type EnemyTierConfig = {
   color: string;
   xpReward: number;
   scoreReward: number;
+
+  // Drop ao morrer — opcional (nem todo tier solta algo ainda). Aponta
+  // pro id de um ItemDefinition (entities/items/itemRegistry.ts) só por
+  // string, mesmo desacoplamento que já existe entre mapa e raça — o
+  // domínio de inimigo nunca importa o de item diretamente.
+  drop?: {
+    itemId: string;
+    chance: number; // 0 a 1
+    min: number; // quantidade mínima, se cair o drop
+    max: number; // quantidade máxima, inclusive
+  };
 };
 
 export type Enemy = {
@@ -79,6 +90,12 @@ export type Enemy = {
   color: string;
   xpReward: number;
   scoreReward: number;
+  drop?: {
+    itemId: string;
+    chance: number;
+    min: number;
+    max: number;
+  };
 
   // ANIMAÇÂO
   animState: EnemyAnimState;
