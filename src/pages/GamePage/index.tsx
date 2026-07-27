@@ -53,6 +53,7 @@ import { createItemPickup, type ItemPickup } from "../../entities/items/world/it
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
+import { useGameClock } from "./hooks/useGameClock";
 import styles from "./GamePage.module.scss";
 
 const AUTOSAVE_INTERVAL_MS = 5000;
@@ -168,6 +169,11 @@ function GamePage() {
   const directionRef = useRef("down");
   const gameStateRef = useRef<GameState>("playing");
 
+  // Tempo de jogo — tempo real, só conta enquanto a aba está visível (ver
+  // useGameClock.ts). Dia 1, 00:00 é o padrão pra save novo/antigo sem
+  // esse campo ainda.
+  const { totalPlayedMsRef } = useGameClock(savedGame?.totalPlayedMs ?? 0);
+
   useKeyboardControls(keysRef);
 
   // Identidade estável (useCallback) — evita recriar o RAF loop a cada
@@ -183,8 +189,10 @@ function GamePage() {
 
   // Monta o snapshot pra salvar, sempre lendo os refs mais recentes (não
   // captura valor "velho" de closure, mesmo chamado de dentro de um
-  // interval configurado uma vez só no mount)
-  const buildSnapshot = () => ({
+  // interval configurado uma vez só no mount). useCallback com deps
+  // vazias é seguro aqui porque só lê `.current` de refs — nunca captura
+  // state direto, então a identidade nunca precisa mudar.
+  const buildSnapshot = useCallback(() => ({
     attributes: attributesRef.current,
     progress: progressRef.current,
     position: posRef.current,
@@ -192,7 +200,8 @@ function GamePage() {
     score: hudRef.current.score,
     mapId: getCurrentMapId(),
     inventory: inventoryRef.current,
-  });
+    totalPlayedMs: totalPlayedMsRef.current,
+  }), [totalPlayedMsRef]);
 
   // Player pisou num portal — troca de mapa, reposiciona, e gera os
   // inimigos/covis do mapa novo. Atributos/progresso não mudam (mesmo
@@ -207,7 +216,7 @@ function GamePage() {
     densRef.current = spawnDensFromMap();
     pickupsRef.current = [];
     saveGame(buildSnapshot());
-  }, []);
+  }, [buildSnapshot]);
 
   const handlePlayerDeath = useCallback(() => {
     const result = applyDeathPenalty(
@@ -240,7 +249,7 @@ function GamePage() {
   // alocado) — essas mudanças são raras, então salvar na hora não pesa.
   useEffect(() => {
     saveGame(buildSnapshot());
-  }, [attributes, progress, inventory]);
+  }, [attributes, progress, inventory, buildSnapshot]);
 
   // Posição/HP/score mudam a cada frame dentro de refs (não disparam
   // re-render), então autosave periódico + um último save ao fechar/trocar
@@ -257,7 +266,7 @@ function GamePage() {
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [buildSnapshot]);
 
   // Gasta 1 ponto de level up num atributo primário — chamado pela UI do
   // StatusPanel quando o player clica em "+" ao lado de FOR/DES/CON/RES.
@@ -385,6 +394,7 @@ function GamePage() {
         directionRef={directionRef}
         gameStateRef={gameStateRef}
         damageNumbersRef={damageNumbersRef}
+        totalPlayedMsRef={totalPlayedMsRef}
         onRespawn={handleRespawn}
       />
       <ControlGame keysRef={keysRef} />

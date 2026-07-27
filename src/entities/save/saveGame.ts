@@ -15,6 +15,9 @@ export type SaveData = {
   // Opcional: saves de antes do inventário existir não têm esse campo —
   // GamePage já trata isso com `savedGame?.inventory ?? createEmptyInventory()`.
   inventory?: Inventory;
+  // Opcional: saves de antes do tempo de jogo existir viram 0 (Dia 1,
+  // 00:00) — ver useGameClock.ts.
+  totalPlayedMs?: number;
 };
 
 // localStorage pode falhar (modo privado, quota cheia, navegador exótico)

@@ -33,6 +33,7 @@ import {
 import { renderDebugHitbox } from "./render/renderDebugHitbox";
 import { DEBUG_HITBOX } from "./utils/hitbox";
 import { computeDeltaScale } from "../../entities/combat/deltaTime";
+import { computeGameTime, formatGameTime } from "../../entities/time/gameTime";
 
 // PROPS
 type Props = {
@@ -45,6 +46,7 @@ type Props = {
   directionRef: React.RefObject<string>;
   gameStateRef: React.RefObject<GameState>;
   damageNumbersRef: React.RefObject<DamageNumber[]>;
+  totalPlayedMsRef: React.RefObject<number>;
   onRespawn: () => void;
 };
 
@@ -62,6 +64,7 @@ function ScreenGame({
   directionRef,
   gameStateRef,
   damageNumbersRef,
+  totalPlayedMsRef,
   onRespawn,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -174,7 +177,7 @@ function ScreenGame({
       ctx.restore(); // remove zoom — daqui pra baixo é pixel de tela real
 
       // 4 HUD
-      renderHud(ctx, hud.hp, hud.hpMax, hud.score, SCREEN_W);
+      renderHud(ctx, hud.hp, hud.hpMax, hud.score, SCREEN_W, formatGameTime(computeGameTime(totalPlayedMsRef.current)));
 
       // TELA DE MORTE
       if (gameState === "dead") {
@@ -221,6 +224,7 @@ function ScreenGame({
     directionRef,
     gameStateRef,
     damageNumbersRef,
+    totalPlayedMsRef,
     onRespawn,
     screenWRef,
     screenHRef,

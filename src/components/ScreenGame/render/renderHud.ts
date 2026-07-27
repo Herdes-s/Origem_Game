@@ -14,6 +14,7 @@ export function renderHud(
   hpMax: number,
   score: number,
   screenW: number,
+  gameTimeLabel: string,
 ) {
   const percent = Math.max(0, Math.min(1, hp / hpMax));
 
@@ -52,5 +53,9 @@ export function renderHud(
   ctx.textAlign = "right";
   ctx.fillStyle = "#fde68a";
   ctx.fillText(`${score} pts`, screenW - 12, 26);
+
+  ctx.font = "10px monospace";
+  ctx.fillStyle = "#94a3b8";
+  ctx.fillText(gameTimeLabel, screenW - 12, 39);
   ctx.textAlign = "left";
 }
