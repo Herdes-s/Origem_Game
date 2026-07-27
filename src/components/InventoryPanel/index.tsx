@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { Inventory } from "../../entities/items/itemTypes";
-import styles from "./InventoryPanel.module.scss";
 import { getItemDefinition, ITEM_DEFINITIONS } from "../../entities/items/itemRegistry";
+import styles from "./InventoryPanel.module.scss";
 
 type Props = {
   inventory: Inventory;
@@ -163,9 +163,18 @@ function InventoryPanel({
                 >
                   {def && slot && !isDragSource && (
                     <>
-                      <span className={styles.icon} style={{ background: def.color }}>
-                        {def.name.charAt(0)}
-                      </span>
+                      {def.iconSrc ? (
+                        <img
+                          src={def.iconSrc}
+                          alt={def.name}
+                          draggable={false}
+                          className={styles.icon_img}
+                        />
+                      ) : (
+                        <span className={styles.icon} style={{ background: def.color }}>
+                          {def.name.charAt(0)}
+                        </span>
+                      )}
                       {slot.quantity > 1 && <span className={styles.qty}>{slot.quantity}</span>}
                     </>
                   )}
@@ -200,14 +209,20 @@ function InventoryPanel({
       )}
 
       {/* Ícone fantasma seguindo o dedo/cursor durante o arrasto */}
-      {drag && (
-        <div
-          className={styles.drag_ghost}
-          style={{ left: drag.x, top: drag.y, background: getItemDefinition(drag.itemId)?.color }}
-        >
-          {getItemDefinition(drag.itemId)?.name.charAt(0)}
-        </div>
-      )}
+      {drag && (() => {
+        const dragDef = getItemDefinition(drag.itemId);
+        return (
+          <div className={styles.drag_ghost} style={{ left: drag.x, top: drag.y }}>
+            {dragDef?.iconSrc ? (
+              <img src={dragDef.iconSrc} alt={dragDef.name} draggable={false} className={styles.drag_ghost_img} />
+            ) : (
+              <span className={styles.drag_ghost_fallback} style={{ background: dragDef?.color }}>
+                {dragDef?.name.charAt(0)}
+              </span>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Confirmação de descarte — evita perder item por soltar sem querer na lixeira */}
       {pendingDiscard !== null && pendingSlot && (

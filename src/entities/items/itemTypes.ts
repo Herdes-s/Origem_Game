@@ -17,7 +17,8 @@ export type ItemDefinition = {
   category: ItemCategory;
   weight: number; // peso por unidade — usado no cálculo de carga (entities/items/weight.ts)
   maxStack: number; // quantos cabem no mesmo slot (1 = não empilha)
-  color: string; // cor de fallback do ícone — placeholder até termos sprite de item de verdade
+  color: string; // cor de fallback do ícone — usada enquanto iconSrc não existe/não carregou
+  iconSrc?: string; // caminho pra imagem do item (public/assets/items/...) — opcional, sem isso cai no placeholder de cor+letra
   description?: string;
 };
 

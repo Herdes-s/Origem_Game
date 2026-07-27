@@ -12,6 +12,7 @@ export const INGREDIENTES: Record<string, ItemDefinition> = {
     weight: 0.5,
     maxStack: 30,
     color: "#4ade80",
+    iconSrc: "/assets/items/pedaco_slime.png",
     description: "Ingrediente para alquimia. Usado no preparo de poções.",
   },
 };

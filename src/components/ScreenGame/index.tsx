@@ -17,6 +17,7 @@ import { useScreenSize } from "./hooks/useScreenSize";
 import { useGameSprites } from "./hooks/useGameSprites";
 import { useFlashCanvas } from "./hooks/useFlashCanvas";
 import { useTileTextures } from "./hooks/useTileTextures";
+import { useItemIcons } from "./hooks/useItemIcons";
 import { usePlayerAnimation } from "./animation/usePlayerAnimation";
 
 import { renderMap } from "./render/renderMap";
@@ -72,6 +73,7 @@ function ScreenGame({
   const spritesRef = useGameSprites();
   const { flashCanvasRef, flashCtxRef } = useFlashCanvas();
   const tileTexturesRef = useTileTextures();
+  const itemIconsRef = useItemIcons();
   const {
     frameIndexRef,
     attackFrameIndexRef,
@@ -132,7 +134,7 @@ function ScreenGame({
       renderMap(ctx, activeMap.tiles, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
 
       // 1.5 ITENS NO CHÃO — desenhados sobre o mapa, mas sob os inimigos/player
-      renderPickups(ctx, pickupsRef.current, camX, camY, SCREEN_W, SCREEN_H);
+      renderPickups(ctx, pickupsRef.current, camX, camY, SCREEN_W, SCREEN_H, itemIconsRef.current);
 
       // 2 INIMIGOS
       renderEnemies(
@@ -227,6 +229,7 @@ function ScreenGame({
     flashCanvasRef,
     flashCtxRef,
     tileTexturesRef,
+    itemIconsRef,
     frameIndexRef,
     attackFrameIndexRef,
     updatePlayerAnimation,
