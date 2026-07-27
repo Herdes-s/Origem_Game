@@ -4,6 +4,8 @@ import { getItemDefinition, ITEM_DEFINITIONS } from "../../entities/items/itemRe
 import styles from "./InventoryPanel.module.scss";
 
 type Props = {
+  open: boolean;
+  onClose: () => void;
   inventory: Inventory;
   currentWeight: number;
   carryCapacity: number;
@@ -44,6 +46,8 @@ function resolveDropTarget(clientX: number, clientY: number): DropTarget {
 // mundo, e uma fileira de botões de TESTE (temporária) pra popular o
 // inventário com itens que a coleta de verdade ainda não dropa.
 function InventoryPanel({
+  open,
+  onClose,
   inventory,
   currentWeight,
   carryCapacity,
@@ -51,7 +55,6 @@ function InventoryPanel({
   onMoveItem,
   onConfirmDiscard,
 }: Props) {
-  const [open, setOpen] = useState(false);
   const [drag, setDrag] = useState<DragState>(null);
   const [hoverTarget, setHoverTarget] = useState<DropTarget>(null);
   const [pendingDiscard, setPendingDiscard] = useState<number | null>(null);
@@ -71,7 +74,6 @@ function InventoryPanel({
 
   const weightPercent = Math.min(100, (currentWeight / carryCapacity) * 100);
   const isFull = currentWeight >= carryCapacity;
-  const usedSlots = inventory.filter((s) => s !== null).length;
 
   const handleSlotPointerDown = (e: React.PointerEvent, index: number) => {
     const slot = inventory[index];
@@ -118,18 +120,16 @@ function InventoryPanel({
   const pendingSlot = pendingDiscard !== null ? inventory[pendingDiscard] : null;
   const pendingDef = pendingSlot ? getItemDefinition(pendingSlot.itemId) : undefined;
 
+  if (!open) return null;
+
   return (
     <>
-      <button
-        className={styles.toggle_button}
-        onClick={(e) => clickAndBlur(e, () => setOpen((v) => !v))}
-        type="button"
-      >
-        {open ? "✕ Fechar" : `🎒 (${usedSlots}/${inventory.length})`}
-      </button>
+      <div className={styles.backdrop} onClick={onClose}>
+        <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+          <button className={styles.close_button} onClick={onClose} type="button" aria-label="Fechar">
+            ✕
+          </button>
 
-      {open && (
-        <div className={styles.panel}>
           <div className={styles.weight_row}>
             <span>
               Carga: {currentWeight.toFixed(1)} / {carryCapacity.toFixed(1)}
@@ -206,7 +206,7 @@ function InventoryPanel({
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Ícone fantasma seguindo o dedo/cursor durante o arrasto */}
       {drag && (() => {

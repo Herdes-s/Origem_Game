@@ -1,47 +1,15 @@
-// Barra fixa no topo central que agrupa os botões de HUD (Inventário,
-// Status, Mudo). O flex + gap centraliza e espaça de verdade, então cada
-// botão pode crescer/encolher conforme o próprio texto (ex: contador
-// "(3/10)" do inventário) sem nunca sobrepor o vizinho — ao contrário de
-// posicionar cada botão individualmente com offset fixo em pixel a partir
-// de 50%, que quebra assim que a largura de qualquer um muda.
-.top_bar {
-  position: fixed;
-  // A HUD desenhada no CANVAS (barra de HP + texto) ocupa y:12–39px,
-  // sempre nesses pixels de tela fixos, não importa a largura do
-  // aparelho (ver renderHud.ts). Descer a barra pra cá garante zero
-  // sobreposição em qualquer tamanho de tela — inclusive celular
-  // estreito, onde centralizar horizontalmente sozinho não bastava (a
-  // barra podia cair em cima da HP à esquerda).
-  top: 46px;
-  z-index: 20;
-
-  // Centraliza via left:0/right:0 + justify-content, NÃO via transform:
-  // um elemento com `transform` vira a "âncora" de qualquer descendente
-  // `position: fixed` (é assim que a spec de CSS funciona — deixa de ser
-  // relativo à tela inteira). Isso já quebrou o ícone de arrastar item do
-  // InventoryPanel (aparecia longe do dedo) e o próprio painel dele
-  // (aparecia centralizado em vez de encostado à esquerda). Sem
-  // transform aqui, tudo que for fixed lá dentro (painel, ícone
-  // arrastando, confirmação) volta a se posicionar relativo à tela de
-  // verdade.
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-}
-
 // Botão flutuante "Coletar" — aparece/some conforme a proximidade de um
 // item largado no mundo (ver useGameLoop.ts, detecção por frame com
-// aviso só na borda de mudança). Fica no rodapé central, acima da faixa
-// que o D-pad/ataque mobile ocupam (ControlGame.module.scss: ~84px de
-// botão + 2rem de padding ≈ 116px do fundo), pra nunca sobrepor.
+// aviso só na borda de mudança). Não tem `transform` — nenhum filho
+// fixed nasce daqui, mas é hábito manter o mesmo padrão de centralização
+// (left/right) usado em todo o resto, depois do bug do drag_ghost.
 .collect_button {
   position: fixed;
   bottom: 140px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: fit-content;
   z-index: 15;
 
   padding: 10px 20px;
@@ -54,4 +22,23 @@
   font: bold 13px monospace;
   cursor: pointer;
   white-space: nowrap;
+
+  // No layout mobile (mesma media query do ControlGame), o botão de
+  // ataque fica embaixo à DIREITA (D-pad à esquerda, ataque à direita —
+  // ver ControlGame.module.scss). Nesses casos o "Coletar" centralizado
+  // ficaria em cima do D-pad ou perto demais do ataque; encosta em cima
+  // do botão de ataque especificamente, que é o pedido.
+  //
+  // Ataque: 84px de botão + 2rem (32px) de padding do rodapé = topo do
+  // botão a ~116px do fundo da tela. 150px de bottom aqui dá uma folga
+  // segura acima disso. wrapper do ControlGame também tem padding
+  // horizontal de 2rem, então right:2rem alinha com a borda direita do
+  // botão de ataque.
+  @media (pointer: coarse) and (max-width: 767px),
+         (pointer: coarse) and (max-height: 767px) {
+    left: auto;
+    right: 2rem;
+    margin: 0;
+    bottom: 150px;
+  }
 }

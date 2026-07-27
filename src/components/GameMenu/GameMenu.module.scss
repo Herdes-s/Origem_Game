@@ -1,0 +1,63 @@
+// Container fixo no topo. Centraliza via left:0/right:0 + justify-content
+// — NÃO via transform: um `transform` aqui viraria a "âncora" de
+// qualquer `position: fixed` descendente (é assim que a spec de CSS
+// funciona), quebrando o painel/ícone de arrasto que abrem a partir
+// daqui. Já bugou uma vez por causa disso (ver GamePage.module.scss).
+.wrapper {
+  position: fixed;
+  // A HUD desenhada no CANVAS (barra de HP + texto) ocupa y:12–39px,
+  // sempre nesses pixels de tela, não importa a largura do aparelho (ver
+  // renderHud.ts) — descer pra cá evita sobrepor.
+  top: 46px;
+  left: 0;
+  right: 0;
+  z-index: 20;
+
+  display: flex;
+  justify-content: center;
+}
+
+.toggle_button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(2px);
+
+  color: #e2e8f0;
+  font: bold 11px monospace;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  margin-top: 6px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  width: min(240px, 80vw);
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(2px);
+}
+
+.item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: rgba(30, 41, 59, 0.6);
+  text-align: left;
+
+  color: #e2e8f0;
+  font: 12px monospace;
+  cursor: pointer;
+
+  &:active {
+    background: #334155;
+  }
+}

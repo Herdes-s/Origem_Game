@@ -38,7 +38,7 @@ import {
 } from "../../data/maps";
 import { loadGame, saveGame } from "../../entities/save/saveGame";
 import { playLevelUp } from "../../entities/audio/soundEngine";
-import MuteButton from "../../components/MuteButton";
+import GameMenu from "../../components/GameMenu";
 import InventoryPanel from "../../components/InventoryPanel";
 import type { Inventory } from "../../entities/items/itemTypes";
 import {
@@ -146,6 +146,10 @@ function GamePage() {
   // (useGameLoop) já faz a detecção de proximidade a 60fps em refs, e só
   // chama isso quando o id realmente muda (ver onNearbyPickupChange).
   const [nearbyPickupId, setNearbyPickupId] = useState<number | null>(null);
+  // Qual painel grande está aberto agora — só um por vez (StatusPanel e
+  // InventoryPanel são modais controlados daqui, não mais donos do
+  // próprio "open"; quem decide é o GameMenu, através disso).
+  const [activePanel, setActivePanel] = useState<"inventory" | "status" | null>(null);
   const handleNearbyPickupChange = useCallback((id: number | null) => {
     setNearbyPickupId(id);
   }, []);
@@ -389,22 +393,31 @@ function GamePage() {
           ✋ Coletar
         </button>
       )}
-      <div className={styles.top_bar}>
-        <InventoryPanel
-          inventory={inventory}
-          currentWeight={attributes.secondary.peso}
-          carryCapacity={computeCarryCapacity(attributes.primary.for)}
-          onAddTestItem={handleAddTestItem}
-          onMoveItem={handleMoveItem}
-          onConfirmDiscard={handleConfirmDiscard}
-        />
-        <StatusPanel
-          attributes={attributes}
-          progress={progress}
-          onAllocate={handleAllocate}
-        />
-        <MuteButton />
-      </div>
+
+      <GameMenu
+        inventoryLabel={`Inventário (${inventory.filter((s) => s !== null).length}/${inventory.length})`}
+        statusLabel={`Status${progress.unallocatedPoints > 0 ? ` (${progress.unallocatedPoints})` : ""}`}
+        onOpenInventory={() => setActivePanel("inventory")}
+        onOpenStatus={() => setActivePanel("status")}
+      />
+
+      <InventoryPanel
+        open={activePanel === "inventory"}
+        onClose={() => setActivePanel(null)}
+        inventory={inventory}
+        currentWeight={attributes.secondary.peso}
+        carryCapacity={computeCarryCapacity(attributes.primary.for)}
+        onAddTestItem={handleAddTestItem}
+        onMoveItem={handleMoveItem}
+        onConfirmDiscard={handleConfirmDiscard}
+      />
+      <StatusPanel
+        open={activePanel === "status"}
+        onClose={() => setActivePanel(null)}
+        attributes={attributes}
+        progress={progress}
+        onAllocate={handleAllocate}
+      />
     </>
   );
 }
