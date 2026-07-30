@@ -65,7 +65,13 @@ type ToneOptions = {
 };
 
 // Toca um único tom sintetizado — a base de todos os efeitos daqui.
-function playTone({ type = "square", freq, freqTo, duration, volume = 0.25 }: ToneOptions) {
+function playTone({
+  type = "square",
+  freq,
+  freqTo,
+  duration,
+  volume = 0.25,
+}: ToneOptions) {
   if (muted) return;
 
   const ctx = getAudioContext();
@@ -77,7 +83,10 @@ function playTone({ type = "square", freq, freqTo, duration, volume = 0.25 }: To
   osc.type = type;
   osc.frequency.setValueAtTime(freq, ctx.currentTime);
   if (freqTo !== undefined) {
-    osc.frequency.exponentialRampToValueAtTime(freqTo, ctx.currentTime + duration);
+    osc.frequency.exponentialRampToValueAtTime(
+      freqTo,
+      ctx.currentTime + duration,
+    );
   }
 
   // Envelope de volume — sobe instantâneo, desce suave (evita "estalo")
@@ -106,7 +115,12 @@ function pitchFor(race?: string): number {
 // ── EFEITOS ────────────────────────────────────────────────────────────────
 
 export function playHit(race?: string) {
-  playTone({ type: "square", freq: 220 * pitchFor(race), duration: 0.08, volume: 0.22 });
+  playTone({
+    type: "square",
+    freq: 220 * pitchFor(race),
+    duration: 0.08,
+    volume: 0.22,
+  });
 }
 
 export function playCrit(race?: string) {
@@ -120,7 +134,13 @@ export function playCrit(race?: string) {
 }
 
 export function playHurt() {
-  playTone({ type: "sawtooth", freq: 140, freqTo: 90, duration: 0.15, volume: 0.25 });
+  playTone({
+    type: "sawtooth",
+    freq: 140,
+    freqTo: 90,
+    duration: 0.15,
+    volume: 0.25,
+  });
 }
 
 export function playEnemyDeath(race?: string) {
@@ -138,10 +158,19 @@ export function playLevelUp() {
   // Arpejo simples subindo — 3 notas curtas em sequência
   const notes = [440, 550, 660];
   notes.forEach((freq, i) => {
-    setTimeout(() => playTone({ type: "sine", freq, duration: 0.15, volume: 0.25 }), i * 90);
+    setTimeout(
+      () => playTone({ type: "sine", freq, duration: 0.15, volume: 0.25 }),
+      i * 90,
+    );
   });
 }
 
 export function playPlayerDeath() {
-  playTone({ type: "sawtooth", freq: 200, freqTo: 50, duration: 0.6, volume: 0.28 });
+  playTone({
+    type: "sawtooth",
+    freq: 200,
+    freqTo: 50,
+    duration: 0.6,
+    volume: 0.28,
+  });
 }

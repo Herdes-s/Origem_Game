@@ -24,16 +24,19 @@ const FRAME_SPEED_BY_RACE: Record<string, Record<string, number>> = {
   goblin: GOBLIN_FRAME_SPEED,
 };
 
+// Mede a distancia entre o ponto a e o ponto b
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2);
 }
 
+// Pega a direção de um ponto ao outro e transforma em vetor de tamanho1 e mantem apenas a direçao
 function normalize(dx: number, dy: number): [number, number] {
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len === 0) return [0, 0];
   return [dx / len, dy / len];
 }
 
+// Move o inimigo para o normalize
 function moveEnemy(enemy: Enemy, dx: number, dy: number, dt: number) {
   const [ndx, ndy] = normalize(dx, dy);
 
@@ -60,6 +63,8 @@ function moveEnemy(enemy: Enemy, dx: number, dy: number, dt: number) {
 // KNOCKBACK — lógica compartilhada com o player, ver entities/combat/knockback.ts
 
 // ANIMAÇÂO
+
+// controla animação do inimigo 
 function updateAnimation(enemy: Enemy, dt: number) {
   const speed = FRAME_SPEED_BY_RACE[enemy.race]?.[enemy.animState] ?? 12;
   const count = 4;
@@ -162,7 +167,11 @@ function tryDamagePlayer(
       // inimigo (enemy.knockbackForce), amortecida pela RES do player e
       // multiplicada pelo peso dele (ver entities/combat/knockback.ts)
       const [ndx, ndy] = normalize(player.x - enemy.x, player.y - enemy.y);
-      const force = computeIncomingKnockback(enemy.knockbackForce, defense, weightMultiplier);
+      const force = computeIncomingKnockback(
+        enemy.knockbackForce,
+        defense,
+        weightMultiplier,
+      );
       attackRef.current.knockbackX = ndx * force;
       attackRef.current.knockbackY = ndy * force;
     }
@@ -244,7 +253,16 @@ export function updateEnemies(
         break;
     }
 
-    tryDamagePlayer(enemy, player, hud, attackRef, defense, weightMultiplier, damageNumbers, dt);
+    tryDamagePlayer(
+      enemy,
+      player,
+      hud,
+      attackRef,
+      defense,
+      weightMultiplier,
+      damageNumbers,
+      dt,
+    );
     updateAnimation(enemy, dt);
   }
 }

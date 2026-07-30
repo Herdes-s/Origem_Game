@@ -1,12 +1,20 @@
 import type { MapDefinition } from "./types";
 import { CAVERNA } from "./caverna";
 import { FLORESTA } from "./floresta";
+import { CIDADE } from "./cidade";
+import { GUILDA } from "./guilda";
+import { FORJA } from "./forja";
+import { LOJA_POCOES } from "./lojaPocoes";
 
-export type { MapDefinition, Portal, WanderSpawnConfig, PatrolSpawnConfig, EnemyRace } from "./types";
+export type { MapDefinition, Portal, WanderSpawnConfig, PatrolSpawnConfig, EnemyRace, BuildingConfig } from "./types";
 
 export const MAPS: Record<string, MapDefinition> = {
   caverna: CAVERNA,
   floresta: FLORESTA,
+  cidade: CIDADE,
+  guilda: GUILDA,
+  forja: FORJA,
+  loja_pocoes: LOJA_POCOES,
 };
 
 export const DEFAULT_MAP_ID = "caverna";
@@ -33,4 +41,18 @@ export function getCurrentMap(): MapDefinition {
 
 export function getMapById(id: string): MapDefinition {
   return MAPS[id] ?? MAPS[DEFAULT_MAP_ID];
+}
+
+// Todo spriteSrc único usado por algum prédio, em qualquer mapa
+// registrado — mesmo papel que listTileTextures() já tem pros tiles.
+// useBuildingSprites.ts pré-carrega essa lista uma vez só, e o render de
+// cada mapa resolve pelo spriteSrc do seu próprio `buildings`.
+export function listBuildingSprites(): string[] {
+  const seen = new Set<string>();
+  for (const map of Object.values(MAPS)) {
+    for (const building of map.buildings) {
+      seen.add(building.spriteSrc);
+    }
+  }
+  return Array.from(seen);
 }

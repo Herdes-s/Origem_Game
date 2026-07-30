@@ -17,10 +17,12 @@ import { useScreenSize } from "./hooks/useScreenSize";
 import { useGameSprites } from "./hooks/useGameSprites";
 import { useFlashCanvas } from "./hooks/useFlashCanvas";
 import { useTileTextures } from "./hooks/useTileTextures";
+import { useBuildingSprites } from "./hooks/useBuildingSprites";
 import { useItemIcons } from "./hooks/useItemIcons";
 import { usePlayerAnimation } from "./animation/usePlayerAnimation";
 
 import { renderMap } from "./render/renderMap";
+import { renderBuildings } from "./render/renderBuildings";
 import { renderEnemies } from "./render/renderEnemies";
 import { renderPickups } from "./render/renderPickups";
 import { renderPlayer } from "./render/renderPlayer";
@@ -76,6 +78,7 @@ function ScreenGame({
   const spritesRef = useGameSprites();
   const { flashCanvasRef, flashCtxRef } = useFlashCanvas();
   const tileTexturesRef = useTileTextures();
+  const buildingSpritesRef = useBuildingSprites();
   const itemIconsRef = useItemIcons();
   const {
     frameIndexRef,
@@ -135,6 +138,10 @@ function ScreenGame({
 
       // 1 MAPA
       renderMap(ctx, activeMap.tiles, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
+
+      // 1.2 PRÉDIOS — sprite único desenhado por cima do mosaico de tile
+      // (a colisão real já vem do grid, isso é só visual)
+      renderBuildings(ctx, activeMap.buildings, camX, camY, SCREEN_W, SCREEN_H, buildingSpritesRef.current);
 
       // 1.5 ITENS NO CHÃO — desenhados sobre o mapa, mas sob os inimigos/player
       renderPickups(ctx, pickupsRef.current, camX, camY, SCREEN_W, SCREEN_H, itemIconsRef.current);
@@ -233,6 +240,7 @@ function ScreenGame({
     flashCanvasRef,
     flashCtxRef,
     tileTexturesRef,
+    buildingSpritesRef,
     itemIconsRef,
     frameIndexRef,
     attackFrameIndexRef,

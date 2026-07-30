@@ -42,6 +42,7 @@ export const CAVERNA: MapDefinition = {
     { race: "slime", tier: "slimeHeroi", patrol: [9, 13, 9, 17], levelRange: { min: 5, max: 10 } },
   ],
 
+  buildings: [],
   portals: [
     // canto superior direito → chegada na floresta perto do portal de lá
     { tx: 25, ty: 1, targetMapId: "floresta", targetTx: 2, targetTy: 1 },

@@ -11,6 +11,9 @@ export const TILE = {
   GRASS: 3,
   SPAWN_CAVE: 4,
   PORTAL: 5,
+  ROAD: 6,
+  ROAD_BREACK: 7,
+  DOOR: 8,
 } as const;
 
 export type TileDefinition = {
@@ -64,6 +67,27 @@ export const TILE_DEFINITIONS: Record<number, TileDefinition> = {
     name: "Portal",
     color: "#a855f7",
     textureSrc: "/assets/tiles/portal.png",
+    solid: false,
+  },
+  [TILE.ROAD]: {
+    id: TILE.ROAD,
+    name: "Estrada",
+    color: "#787060",
+    textureSrc: "/assets/tiles/road.png",
+    solid: false,
+  },
+  [TILE.ROAD_BREACK]: {
+    id: TILE.ROAD_BREACK,
+    name: "Estrada_solida",
+    color: "#787060",
+    textureSrc: "/assets/tiles/road.png",
+    solid: true,
+  },
+  [TILE.DOOR]: {
+    id: TILE.DOOR,
+    name: "Porta",
+    color: "#fff",
+    textureSrc: "/assets/tiles/door.png",
     solid: false,
   }
 };

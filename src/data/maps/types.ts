@@ -33,6 +33,20 @@ export type Portal = {
   targetTy: number;
 };
 
+// Um prédio é uma IMAGEM desenhada por cima do grid de tiles — a
+// colisão de verdade continua vindo do grid (HOUSE_WALL sólido, DOOR
+// andável/portal), a sprite só cobre visualmente esse retângulo. Cada
+// prédio pode ter um tamanho diferente (não precisa ser quadrado nem
+// igual entre si — um ferreiro pequeno e uma guilda grande convivem sem
+// problema).
+export type BuildingConfig = {
+  spriteSrc: string; // public/assets/buildings/...
+  tileX: number; // canto superior-esquerdo do footprint, em tiles
+  tileY: number;
+  tilesW: number; // largura do footprint em tiles — a imagem já vem pronta nesse múltiplo de 64px
+  tilesH: number;
+};
+
 export type MapDefinition = {
   id: string;
   name: string;
@@ -42,4 +56,5 @@ export type MapDefinition = {
   wanderSpawns: WanderSpawnConfig[];
   patrolSpawns: PatrolSpawnConfig[];
   portals: Portal[];
+  buildings: BuildingConfig[];
 };

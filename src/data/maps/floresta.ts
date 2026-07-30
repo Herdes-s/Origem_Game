@@ -1,3 +1,4 @@
+import { TILE } from "../tiles";
 import type { MapDefinition } from "./types";
 
 export const FLORESTA: MapDefinition = {
@@ -11,8 +12,8 @@ export const FLORESTA: MapDefinition = {
   // caverna — dá pra sentir que é outra fase.
   tiles: [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-    [1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
-    [1,3,5,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
+    [1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,TILE.PORTAL,1],
+    [1,3,TILE.PORTAL,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
     [1,3,3,1,1,3,3,3,3,3,3,1,1,3,3,3,3,3,1,1,3,3,3,1],
     [1,3,3,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1,3,3,3,3,1],
     [1,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,1],
@@ -31,17 +32,20 @@ export const FLORESTA: MapDefinition = {
   ],
 
   wanderSpawns: [
-    { race: "goblin", tier: "goblin", count: 5, levelRange: { min: 3, max: 8 } }, // floresta favorece goblin (mais ágil, combina com o tema)
-    { race: "slime", tier: "slime", count: 2, levelRange: { min: 3, max: 8 } },
+    { race: "goblin", tier: "goblin", count: 5, levelRange: { min: 5, max: 10 } }, // floresta favorece goblin (mais ágil, combina com o tema)
+    { race: "slime", tier: "slime", count: 2, levelRange: { min: 5, max: 10 } },
   ],
 
   patrolSpawns: [
-    { race: "goblin", tier: "goblinHeroi", patrol: [4, 7, 4, 10], levelRange: { min: 8, max: 14 } },
-    { race: "slime", tier: "slimeHeroi", patrol: [18, 7, 18, 10], levelRange: { min: 8, max: 14 } },
+    { race: "goblin", tier: "goblinHeroi", patrol: [4, 7, 4, 10], levelRange: { min: 8, max: 15 } },
+    { race: "slime", tier: "slimeHeroi", patrol: [18, 7, 18, 10], levelRange: { min: 8, max: 15 } },
   ],
 
+  buildings: [],
   portals: [
     // perto de onde o player chega vindo da caverna
     { tx: 2, ty: 2, targetMapId: "caverna", targetTx: 25, targetTy: 2 },
+    // canto superior direito → chegada na cidade perto da saída de lá
+    { tx: 22, ty: 1, targetMapId: "cidade", targetTx: 10, targetTy: 2 },
   ],
 };
