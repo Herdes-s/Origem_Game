@@ -40,6 +40,7 @@ export default defineConfig({
       },
 
       workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Pré-cacheia tudo que o build gera (JS/CSS/HTML) + as imagens do
         // jogo (sprites, texturas de tile, ícones) — isso é o que permite
         // abrir o jogo sem internet depois da primeira visita.
