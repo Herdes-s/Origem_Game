@@ -137,14 +137,38 @@ function ScreenGame({
       ctx.scale(ZOOM, ZOOM);
 
       // 1 MAPA
-      renderMap(ctx, activeMap.tiles, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
+      renderMap(
+        ctx,
+        activeMap.tiles,
+        camX,
+        camY,
+        SCREEN_W,
+        SCREEN_H,
+        tileTexturesRef.current,
+      );
 
       // 1.2 PRÉDIOS — sprite único desenhado por cima do mosaico de tile
       // (a colisão real já vem do grid, isso é só visual)
-      renderBuildings(ctx, activeMap.buildings, camX, camY, SCREEN_W, SCREEN_H, buildingSpritesRef.current);
+      renderBuildings(
+        ctx,
+        activeMap.buildings,
+        camX,
+        camY,
+        SCREEN_W,
+        SCREEN_H,
+        buildingSpritesRef.current,
+      );
 
       // 1.5 ITENS NO CHÃO — desenhados sobre o mapa, mas sob os inimigos/player
-      renderPickups(ctx, pickupsRef.current, camX, camY, SCREEN_W, SCREEN_H, itemIconsRef.current);
+      renderPickups(
+        ctx,
+        pickupsRef.current,
+        camX,
+        camY,
+        SCREEN_W,
+        SCREEN_H,
+        itemIconsRef.current,
+      );
 
       // 2 INIMIGOS
       renderEnemies(
@@ -175,7 +199,14 @@ function ScreenGame({
       );
 
       // NÚMEROS DE DANO FLUTUANTES
-      renderDamageNumbers(ctx, damageNumbersRef.current, camX, camY, viewW, viewH);
+      renderDamageNumbers(
+        ctx,
+        damageNumbersRef.current,
+        camX,
+        camY,
+        viewW,
+        viewH,
+      );
 
       if (DEBUG_HITBOX && attack.active) {
         renderDebugHitbox(ctx, pos, attack, camX, camY);
@@ -184,7 +215,14 @@ function ScreenGame({
       ctx.restore(); // remove zoom — daqui pra baixo é pixel de tela real
 
       // 4 HUD
-      renderHud(ctx, hud.hp, hud.hpMax, hud.score, SCREEN_W, formatGameTime(computeGameTime(totalPlayedMsRef.current)));
+      renderHud(
+        ctx,
+        hud.hp,
+        hud.hpMax,
+        hud.score,
+        SCREEN_W,
+        formatGameTime(computeGameTime(totalPlayedMsRef.current)),
+      );
 
       // TELA DE MORTE
       if (gameState === "dead") {
@@ -209,7 +247,12 @@ function ScreenGame({
 
       const btn = getRespawnButtonRect(SCREEN_W, SCREEN_H);
 
-      if (cx >= btn.x && cx <= btn.x + btn.w && cy >= btn.y && cy <= btn.y + btn.h) {
+      if (
+        cx >= btn.x &&
+        cx <= btn.x + btn.w &&
+        cy >= btn.y &&
+        cy <= btn.y + btn.h
+      ) {
         onRespawn();
       }
     };

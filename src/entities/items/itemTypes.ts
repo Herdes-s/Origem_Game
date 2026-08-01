@@ -9,7 +9,17 @@ export type ItemCategory =
   | "ingrediente"
   | "material"
   | "minerio"
-  | "planta";
+  | "planta"
+  | "pocao";
+
+// O que acontece ao CONSUMIR o item (botão "Usar" no inventário). Só
+// itens com esse campo preenchido mostram o botão — union type porque
+// puramente "heal" não vai bastar pra sempre (veneno, buff temporário
+// etc.), mas só "heal" existe de verdade por enquanto.
+export type ItemEffect = {
+  type: "heal";
+  amount: number;
+};
 
 export type ItemDefinition = {
   id: string;
@@ -20,6 +30,7 @@ export type ItemDefinition = {
   color: string; // cor de fallback do ícone — usada enquanto iconSrc não existe/não carregou
   iconSrc?: string; // caminho pra imagem do item (public/assets/items/...) — opcional, sem isso cai no placeholder de cor+letra
   description?: string;
+  effect?: ItemEffect;
 };
 
 export const INVENTORY_SIZE = 10;

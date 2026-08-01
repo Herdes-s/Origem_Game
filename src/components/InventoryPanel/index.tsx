@@ -12,6 +12,7 @@ type Props = {
   onAddTestItem: (itemId: string) => void;
   onMoveItem: (from: number, to: number) => void;
   onConfirmDiscard: (slotIndex: number) => void;
+  onUseItem: (slotIndex: number) => void;
 };
 
 type DragState = {
@@ -19,7 +20,14 @@ type DragState = {
   itemId: string;
   x: number; // clientX atual do ponteiro (tela, não mundo)
   y: number; // clientY atual do ponteiro
+  startX: number; // posição onde o toque começou — mede se foi arrasto ou só um toque
+  startY: number;
 } | null;
+
+// Abaixo disso, em pixels, o pointerdown+up conta como TOQUE (seleciona
+// o slot), não arrasto (mover/trocar/lixeira). Generoso o bastante pra
+// não confundir um toque tremido no celular com início de arrasto.
+const TAP_THRESHOLD = 8;
 
 type DropTarget = number | "trash" | null;
 
@@ -54,10 +62,24 @@ function InventoryPanel({
   onAddTestItem,
   onMoveItem,
   onConfirmDiscard,
+  onUseItem,
 }: Props) {
   const [drag, setDrag] = useState<DragState>(null);
   const [hoverTarget, setHoverTarget] = useState<DropTarget>(null);
   const [pendingDiscard, setPendingDiscard] = useState<number | null>(null);
+  // Toque simples (sem arrastar) num slot com item seleciona ele — mostra
+  // o botão "Usar" se for consumível. Arrastar continua servendo pra
+  // mover/trocar/lixeira, sem conflito (ver TAP_THRESHOLD abaixo).
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+
+  // Fecha e já limpa a seleção — sem isso, ela ficaria presa pra próxima
+  // vez que abrir (o componente não desmonta ao "fechar", só retorna
+  // null aqui embaixo). Usado nos dois gestos de fechar que o próprio
+  // componente controla (fundo escurecido e botão ✕).
+  const handleClose = () => {
+    setSelectedSlot(null);
+    onClose();
+  };
 
   // Espelho síncrono do `drag` — o listener de pointerup é criado uma vez
   // no pointerdown e precisa ler o valor MAIS RECENTE, não o que estava
@@ -80,7 +102,14 @@ function InventoryPanel({
     if (!slot) return;
     e.preventDefault();
 
-    const next: DragState = { index, itemId: slot.itemId, x: e.clientX, y: e.clientY };
+    const next: DragState = {
+      index,
+      itemId: slot.itemId,
+      x: e.clientX,
+      y: e.clientY,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
     dragRef.current = next;
     setDrag(next);
 
@@ -103,6 +132,16 @@ function InventoryPanel({
       setHoverTarget(null);
       if (!current) return;
 
+      const moved = Math.hypot(ev.clientX - current.startX, ev.clientY - current.startY);
+
+      if (moved < TAP_THRESHOLD) {
+        // toque simples, sem arrastar de verdade — seleciona/deseleciona
+        setSelectedSlot((prev) => (prev === current.index ? null : current.index));
+        return;
+      }
+
+      setSelectedSlot(null); // qualquer arrasto de verdade cancela a seleção
+
       const target = resolveDropTarget(ev.clientX, ev.clientY);
 
       if (target === "trash") {
@@ -124,9 +163,9 @@ function InventoryPanel({
 
   return (
     <>
-      <div className={styles.backdrop} onClick={onClose}>
+      <div className={styles.backdrop} onClick={handleClose}>
         <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
-          <button className={styles.close_button} onClick={onClose} type="button" aria-label="Fechar">
+          <button className={styles.close_button} onClick={handleClose} type="button" aria-label="Fechar">
             ✕
           </button>
 
@@ -148,6 +187,7 @@ function InventoryPanel({
               const def = slot ? getItemDefinition(slot.itemId) : undefined;
               const isDragSource = drag?.index === i;
               const isHovered = hoverTarget === i && !isDragSource;
+              const isSelected = selectedSlot === i;
 
               return (
                 <div
@@ -157,6 +197,7 @@ function InventoryPanel({
                     styles.slot,
                     isHovered ? styles.slot_hover : "",
                     isDragSource ? styles.slot_dragging : "",
+                    isSelected ? styles.slot_selected : "",
                   ].join(" ")}
                   onPointerDown={(e) => handleSlotPointerDown(e, i)}
                   title={def ? def.name : "Vazio"}
@@ -182,6 +223,30 @@ function InventoryPanel({
               );
             })}
           </div>
+
+          {(() => {
+            const selected = selectedSlot !== null ? inventory[selectedSlot] : null;
+            const selectedDef = selected ? getItemDefinition(selected.itemId) : undefined;
+            if (!selected || !selectedDef) return null;
+
+            return (
+              <div className={styles.action_bar}>
+                <span>{selectedDef.name}</span>
+                {selectedDef.effect && (
+                  <button
+                    type="button"
+                    className={styles.use_button}
+                    onClick={() => {
+                      onUseItem(selectedSlot as number);
+                      setSelectedSlot(null);
+                    }}
+                  >
+                    Usar
+                  </button>
+                )}
+              </div>
+            );
+          })()}
 
           <div
             data-trash="true"

@@ -125,6 +125,37 @@
   opacity: 0.35;
 }
 
+.slot_selected {
+  border: 2px solid #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+}
+
+// Barra que aparece com o item selecionado (toque simples, sem
+// arrastar) — só mostra o botão "Usar" se o item tiver `effect`
+// (consumível). Fica entre o grid e a lixeira.
+.action_bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: rgba(30, 41, 59, 0.6);
+  font-size: 11px;
+}
+
+.use_button {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+  color: #bbf7d0;
+  font: bold 11px monospace;
+  cursor: pointer;
+}
+
 .icon {
   width: 70%;
   height: 70%;

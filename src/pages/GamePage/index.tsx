@@ -40,7 +40,9 @@ import { loadGame, saveGame } from "../../entities/save/saveGame";
 import { playLevelUp } from "../../entities/audio/soundEngine";
 import GameMenu from "../../components/GameMenu";
 import InventoryPanel from "../../components/InventoryPanel";
+import CraftPanel from "../../components/CraftPanel";
 import type { Inventory } from "../../entities/items/itemTypes";
+import { getItemDefinition } from "../../entities/items/itemRegistry";
 import {
   addItem,
   computeInventoryWeight,
@@ -50,6 +52,8 @@ import {
 } from "../../entities/items/inventory";
 import { computeCarryCapacity } from "../../entities/items/weight";
 import { createItemPickup, type ItemPickup } from "../../entities/items/world/itemPickup";
+import { RECIPES } from "../../entities/items/crafting/recipes";
+import { craftItem } from "../../entities/items/crafting/craftItem";
 
 import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
@@ -151,6 +155,11 @@ function GamePage() {
   // InventoryPanel são modais controlados daqui, não mais donos do
   // próprio "open"; quem decide é o GameMenu, através disso).
   const [activePanel, setActivePanel] = useState<"inventory" | "status" | null>(null);
+  // Espelho REATIVO do mapa atual — getCurrentMapId() é imperativo (só
+  // pra ler dentro do game loop), isso aqui existe só pra decidir
+  // condicionalmente na renderização (botão de craft só na loja).
+  const [currentMapId, setCurrentMapIdState] = useState(getCurrentMapId());
+  const [craftPanelOpen, setCraftPanelOpen] = useState(false);
   const handleNearbyPickupChange = useCallback((id: number | null) => {
     setNearbyPickupId(id);
   }, []);
@@ -208,6 +217,10 @@ function GamePage() {
   // princípio do respawn: level e atributos são do PLAYER, não do mapa).
   const handlePortalEnter = useCallback((portal: Portal) => {
     setCurrentMapId(portal.targetMapId);
+    setCurrentMapIdState(portal.targetMapId);
+    // Craft só existe dentro da Loja de Poções — abre sozinho ao entrar
+    // (mesmo sem NPC ainda) e fecha ao sair pra qualquer outro lugar.
+    setCraftPanelOpen(portal.targetMapId === "loja_pocoes");
     posRef.current = {
       x: portal.targetTx * TILE_SIZE + TILE_SIZE / 2,
       y: portal.targetTy * TILE_SIZE + TILE_SIZE / 2,
@@ -341,6 +354,47 @@ function GamePage() {
     setInventory((prev) => moveItem(prev, from, to));
   };
 
+  // Craftar uma receita (só chamado com o botão já habilitado pelo
+  // CraftPanel, mas craftItem() também checa de novo — nunca gasta
+  // ingrediente sem entregar o resultado).
+  const handleCraft = (recipeId: string) => {
+    const recipe = RECIPES.find((r) => r.id === recipeId);
+    if (!recipe) return;
+
+    const capacity = computeCarryCapacity(attributesRef.current.primary.for);
+    const result = craftItem(inventoryRef.current, recipe, capacity);
+    if (!result.success) return;
+
+    setInventory(result.inventory);
+    setAttributes((prev) => ({
+      ...prev,
+      secondary: { ...prev.secondary, peso: computeInventoryWeight(result.inventory) },
+    }));
+  };
+
+  // Consumir um item com efeito (botão "Usar" no InventoryPanel) — só
+  // "heal" existe por enquanto (ver ItemEffect em itemTypes.ts). Some 1
+  // unidade do slot ao usar.
+  const handleUseItem = (slotIndex: number) => {
+    const slot = inventoryRef.current[slotIndex];
+    if (!slot) return;
+
+    const def = getItemDefinition(slot.itemId);
+    if (!def?.effect) return;
+
+    if (def.effect.type === "heal") {
+      const hpMax = computeDerivedStats(attributesRef.current).hpMax;
+      hudRef.current.hp = Math.min(hpMax, hudRef.current.hp + def.effect.amount);
+    }
+
+    const nextInventory = removeItem(inventoryRef.current, slotIndex, 1);
+    setInventory(nextInventory);
+    setAttributes((prev) => ({
+      ...prev,
+      secondary: { ...prev.secondary, peso: computeInventoryWeight(nextInventory) },
+    }));
+  };
+
   // Player confirmou descartar a pilha inteira de um slot (lixeira do
   // InventoryPanel, com confirmação) — o item não é destruído de
   // verdade, volta pro mundo como um ItemPickup na posição atual do
@@ -420,6 +474,7 @@ function GamePage() {
         onAddTestItem={handleAddTestItem}
         onMoveItem={handleMoveItem}
         onConfirmDiscard={handleConfirmDiscard}
+        onUseItem={handleUseItem}
       />
       <StatusPanel
         open={activePanel === "status"}
@@ -427,6 +482,22 @@ function GamePage() {
         attributes={attributes}
         progress={progress}
         onAllocate={handleAllocate}
+      />
+
+      {currentMapId === "loja_pocoes" && !craftPanelOpen && (
+        <button
+          className={styles.craft_reopen_button}
+          onClick={() => setCraftPanelOpen(true)}
+          type="button"
+        >
+          🧪 Poções
+        </button>
+      )}
+      <CraftPanel
+        open={craftPanelOpen}
+        onClose={() => setCraftPanelOpen(false)}
+        inventory={inventory}
+        onCraft={handleCraft}
       />
     </>
   );

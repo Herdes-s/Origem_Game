@@ -103,6 +103,46 @@ export function removeItem(
   return next;
 }
 
+// Soma a quantidade de um item específico espalhada por TODOS os slots
+// (o mesmo item pode estar em mais de um slot se passar do maxStack) —
+// usado pelo craft, que precisa saber "quantos Pedaço de Slime eu tenho
+// no total", não "quantos tem nesse slot".
+export function countItem(inventory: Inventory, itemId: string): number {
+  let total = 0;
+  for (const slot of inventory) {
+    if (slot?.itemId === itemId) total += slot.quantity;
+  }
+  return total;
+}
+
+// Remove `quantity` de um item por ID, tirando de quantos slots
+// precisar (não de um slot específico, ao contrário de removeItem) —
+// usado pelo craft pra gastar o ingrediente. Não faz nada se não tiver
+// quantidade suficiente no total (quem chama já deveria ter checado com
+// countItem antes, mas essa função também não deixa "meio-gastar").
+export function removeItemById(
+  inventory: Inventory,
+  itemId: string,
+  quantity: number,
+): Inventory {
+  if (countItem(inventory, itemId) < quantity) return inventory;
+
+  const next = inventory.map((s) => (s ? { ...s } : null));
+  let remaining = quantity;
+
+  for (let i = 0; i < next.length && remaining > 0; i++) {
+    const slot = next[i];
+    if (slot?.itemId !== itemId) continue;
+
+    const take = Math.min(slot.quantity, remaining);
+    slot.quantity -= take;
+    remaining -= take;
+    if (slot.quantity <= 0) next[i] = null;
+  }
+
+  return next;
+}
+
 // Move o conteúdo do slot `from` pro slot `to` — usado pela interação de
 // arrastar dentro do InventoryPanel. Três casos:
 // 1) destino vazio → só move
