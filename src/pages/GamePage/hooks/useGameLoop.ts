@@ -19,6 +19,8 @@ import { TILE_SIZE } from "../../../data/map";
 import { computeDeltaScale } from "../../../entities/combat/deltaTime";
 import { computeCarryCapacity, computeKnockbackMultiplier } from "../../../entities/items/weight";
 import { findNearestPickup, type ItemPickup } from "../../../entities/items/world/itemPickup";
+import { findNearestNpc } from "../../../entities/npc/npcInteraction";
+import type { NpcConfig } from "../../../data/maps";
 
 const PORTAL_COOLDOWN_FRAMES = 30; // ~0.5s — evita re-teleportar no mesmo frame/instante
 
@@ -38,6 +40,7 @@ type Args = {
   onPortalEnter: (portal: Portal) => void;
   onPlayerDeath: () => void;
   onNearbyPickupChange: (pickupId: number | null) => void;
+  onNearNpcChange: (npc: NpcConfig | null) => void;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -60,6 +63,7 @@ export function useGameLoop({
   onPortalEnter,
   onPlayerDeath,
   onNearbyPickupChange,
+  onNearNpcChange,
 }: Args) {
   const rafRef = useRef<number>(0);
   const portalCooldownRef = useRef(0);
@@ -68,6 +72,7 @@ export function useGameLoop({
   // quando o valor realmente MUDA (não a cada frame) — evita re-render de
   // 60fps só pra mostrar/esconder o botão "Coletar".
   const lastNearbyPickupIdRef = useRef<number | null>(null);
+  const lastNearNpcIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const loop = (timestamp: number) => {
@@ -142,6 +147,18 @@ export function useGameLoop({
           onNearbyPickupChange(nearestId);
         }
 
+        // NPC mais próximo do player, dentro do alcance de interação
+        // DELE (cada NPC pode ter um raio diferente) — mesmo padrão do
+        // pickup: só avisa o React na borda de mudança, e null quando
+        // ninguém está por perto (quem ouve decide o que fazer, ex:
+        // abrir o CraftPanel sozinho).
+        const nearestNpc = findNearestNpc(getCurrentMap().npcs, posRef.current);
+        const nearestNpcId = nearestNpc?.id ?? null;
+        if (nearestNpcId !== lastNearNpcIdRef.current) {
+          lastNearNpcIdRef.current = nearestNpcId;
+          onNearNpcChange(nearestNpc);
+        }
+
         if (portalCooldownRef.current > 0) {
           portalCooldownRef.current -= dt;
         } else {
@@ -189,5 +206,6 @@ export function useGameLoop({
     onPortalEnter,
     onPlayerDeath,
     onNearbyPickupChange,
+    onNearNpcChange,
   ]);
 }

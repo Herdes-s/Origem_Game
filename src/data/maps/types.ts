@@ -1,5 +1,6 @@
 import type { TileMap } from "../../types/game";
 import type { LevelRange } from "../../entities/enemies/enemyLeveling";
+import type { NpcConfig } from "../../entities/npc/npcTypes";
 
 export type EnemyRace = "slime" | "goblin";
 
@@ -57,4 +58,5 @@ export type MapDefinition = {
   patrolSpawns: PatrolSpawnConfig[];
   portals: Portal[];
   buildings: BuildingConfig[];
+  npcs: NpcConfig[];
 };

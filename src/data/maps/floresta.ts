@@ -42,6 +42,7 @@ export const FLORESTA: MapDefinition = {
   ],
 
   buildings: [],
+  npcs: [],
   portals: [
     // perto de onde o player chega vindo da caverna
     { tx: 2, ty: 2, targetMapId: "caverna", targetTx: 25, targetTy: 2 },

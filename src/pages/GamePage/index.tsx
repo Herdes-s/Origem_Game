@@ -52,6 +52,7 @@ import {
 } from "../../entities/items/inventory";
 import { computeCarryCapacity } from "../../entities/items/weight";
 import { createItemPickup, type ItemPickup } from "../../entities/items/world/itemPickup";
+import type { NpcConfig } from "../../data/maps";
 import { RECIPES } from "../../entities/items/crafting/recipes";
 import { craftItem } from "../../entities/items/crafting/craftItem";
 
@@ -155,13 +156,15 @@ function GamePage() {
   // InventoryPanel são modais controlados daqui, não mais donos do
   // próprio "open"; quem decide é o GameMenu, através disso).
   const [activePanel, setActivePanel] = useState<"inventory" | "status" | null>(null);
-  // Espelho REATIVO do mapa atual — getCurrentMapId() é imperativo (só
-  // pra ler dentro do game loop), isso aqui existe só pra decidir
-  // condicionalmente na renderização (botão de craft só na loja).
-  const [currentMapId, setCurrentMapIdState] = useState(getCurrentMapId());
+  // NPC mais próxima agora (ou null) — mesmo padrão do nearbyPickupId,
+  // só que quem ouve decide o que abrir de acordo com o `role` dela.
+  const [nearbyNpc, setNearbyNpc] = useState<NpcConfig | null>(null);
   const [craftPanelOpen, setCraftPanelOpen] = useState(false);
   const handleNearbyPickupChange = useCallback((id: number | null) => {
     setNearbyPickupId(id);
+  }, []);
+  const handleNearNpcChange = useCallback((npc: NpcConfig | null) => {
+    setNearbyNpc(npc);
   }, []);
 
   const attackRef = useRef<AttackState>({
@@ -217,10 +220,13 @@ function GamePage() {
   // princípio do respawn: level e atributos são do PLAYER, não do mapa).
   const handlePortalEnter = useCallback((portal: Portal) => {
     setCurrentMapId(portal.targetMapId);
-    setCurrentMapIdState(portal.targetMapId);
-    // Craft só existe dentro da Loja de Poções — abre sozinho ao entrar
-    // (mesmo sem NPC ainda) e fecha ao sair pra qualquer outro lugar.
-    setCraftPanelOpen(portal.targetMapId === "loja_pocoes");
+    // Craft não abre mais sozinho ao entrar na sala — quem abre agora é
+    // ficar perto da NPC (handleNearNpcChange). Trocar de mapa sempre
+    // fecha (contexto de loja não faz sentido fora dela), e limpa
+    // proximidade de pickup/NPC do mapa anterior (não existem mais aqui).
+    setCraftPanelOpen(false);
+    setNearbyNpc(null);
+    setNearbyPickupId(null);
     posRef.current = {
       x: portal.targetTx * TILE_SIZE + TILE_SIZE / 2,
       y: portal.targetTy * TILE_SIZE + TILE_SIZE / 2,
@@ -256,6 +262,7 @@ function GamePage() {
     onPortalEnter: handlePortalEnter,
     onPlayerDeath: handlePlayerDeath,
     onNearbyPickupChange: handleNearbyPickupChange,
+    onNearNpcChange: handleNearNpcChange,
   });
 
   // Salva na hora quando atributos ou progresso mudam (level up, ponto
@@ -484,13 +491,13 @@ function GamePage() {
         onAllocate={handleAllocate}
       />
 
-      {currentMapId === "loja_pocoes" && !craftPanelOpen && (
+      {nearbyNpc?.role === "pocoes" && !craftPanelOpen && (
         <button
           className={styles.craft_reopen_button}
           onClick={() => setCraftPanelOpen(true)}
           type="button"
         >
-          🧪 Poções
+          💬 Falar
         </button>
       )}
       <CraftPanel

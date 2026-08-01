@@ -42,6 +42,8 @@ export const CIDADE: MapDefinition = {
     { spriteSrc: "/assets/buildings/loja_pocoes.png", tileX: 7, tileY: 10, tilesW: 7, tilesH: 5 },
   ],
 
+  npcs: [],
+
   portals: [
     // Saída norte, de volta pra floresta
     { tx: 10, ty: 1, targetMapId: "floresta", targetTx: 21, targetTy: 1 },

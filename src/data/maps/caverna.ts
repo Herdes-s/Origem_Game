@@ -43,6 +43,7 @@ export const CAVERNA: MapDefinition = {
   ],
 
   buildings: [],
+  npcs: [],
   portals: [
     // canto superior direito → chegada na floresta perto do portal de lá
     { tx: 25, ty: 1, targetMapId: "floresta", targetTx: 2, targetTy: 1 },

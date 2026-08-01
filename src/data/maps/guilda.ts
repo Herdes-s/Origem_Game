@@ -24,6 +24,7 @@ export const GUILDA: MapDefinition = {
   patrolSpawns: [],
 
   buildings: [],
+  npcs: [],
   portals: [
     // Porta de saída — devolve exatamente na frente da porta da Guilda na cidade
     { tx: 3, ty: 5, targetMapId: "cidade", targetTx: 5, targetTy: 7 },

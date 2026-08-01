@@ -1,9 +1,10 @@
 import type { MapDefinition } from "./types";
 import { TILE } from "../tiles";
 
-// Loja de Poções — sala vazia por enquanto (sem comerciante/economia
-// ainda — só faz sentido quando existir crafting de poção de verdade).
-// Mesmo template da Guilda/Forja: só a navegação de verdade existe.
+// Loja de Poções — a vendedora fica perto de onde o player chega
+// (entrando pela porta, de baixo pra cima). Chegar perto dela abre o
+// CraftPanel sozinho (ver useGameLoop.ts + GamePage/index.tsx) — sem
+// botão, sem precisar "falar" explicitamente.
 export const LOJA_POCOES: MapDefinition = {
   id: "loja_pocoes",
   name: "Loja de Poções",
@@ -23,6 +24,17 @@ export const LOJA_POCOES: MapDefinition = {
   patrolSpawns: [],
 
   buildings: [],
+  npcs: [
+    {
+      id: "vendedora_pocoes",
+      name: "Vendedora de Poções",
+      spriteSrc: "/assets/npcs/vendedora_pocoes.png",
+      tileX: 3,
+      tileY: 1,
+      role: "pocoes",
+      interactionRadius: 90,
+    },
+  ],
   portals: [
     // Porta de saída — devolve exatamente na frente da porta da Loja na cidade
     { tx: 3, ty: 5, targetMapId: "cidade", targetTx: 10, targetTy: 15 },

@@ -7,6 +7,7 @@ import { FORJA } from "./forja";
 import { LOJA_POCOES } from "./lojaPocoes";
 
 export type { MapDefinition, Portal, WanderSpawnConfig, PatrolSpawnConfig, EnemyRace, BuildingConfig } from "./types";
+export type { NpcConfig, NpcRole } from "../../entities/npc/npcTypes";
 
 export const MAPS: Record<string, MapDefinition> = {
   caverna: CAVERNA,
@@ -52,6 +53,17 @@ export function listBuildingSprites(): string[] {
   for (const map of Object.values(MAPS)) {
     for (const building of map.buildings) {
       seen.add(building.spriteSrc);
+    }
+  }
+  return Array.from(seen);
+}
+
+// Mesma ideia, pros sprites de NPC.
+export function listNpcSprites(): string[] {
+  const seen = new Set<string>();
+  for (const map of Object.values(MAPS)) {
+    for (const npc of map.npcs) {
+      seen.add(npc.spriteSrc);
     }
   }
   return Array.from(seen);

@@ -44,10 +44,11 @@
 }
 
 // Botão "🧪 Poções" — reabre o CraftPanel depois que o player fecha ele
-// (o painel já abre sozinho ao entrar na loja; isso só existe pra
-// reabrir sem precisar sair e entrar de novo). Só aparece dentro da
-// Loja de Poções. Mesmo raciocínio de posição do .collect_button, mas
-// do lado do D-pad (esquerda) no mobile, não do ataque.
+// Botão "💬 Falar" — aparece quando o player está perto da NPC que
+// vende poção (ver useGameLoop.ts, detecção de proximidade por NPC, e
+// GamePage/index.tsx). Tocar abre o CraftPanel. Mesmo raciocínio de
+// posição do .collect_button, mas do lado do D-pad (esquerda) no
+// mobile, não do ataque.
 .craft_reopen_button {
   position: fixed;
   bottom: 140px;

@@ -18,11 +18,13 @@ import { useGameSprites } from "./hooks/useGameSprites";
 import { useFlashCanvas } from "./hooks/useFlashCanvas";
 import { useTileTextures } from "./hooks/useTileTextures";
 import { useBuildingSprites } from "./hooks/useBuildingSprites";
+import { useNpcSprites } from "./hooks/useNpcSprites";
 import { useItemIcons } from "./hooks/useItemIcons";
 import { usePlayerAnimation } from "./animation/usePlayerAnimation";
 
 import { renderMap } from "./render/renderMap";
 import { renderBuildings } from "./render/renderBuildings";
+import { renderNpcs } from "./render/renderNpcs";
 import { renderEnemies } from "./render/renderEnemies";
 import { renderPickups } from "./render/renderPickups";
 import { renderPlayer } from "./render/renderPlayer";
@@ -79,6 +81,7 @@ function ScreenGame({
   const { flashCanvasRef, flashCtxRef } = useFlashCanvas();
   const tileTexturesRef = useTileTextures();
   const buildingSpritesRef = useBuildingSprites();
+  const npcSpritesRef = useNpcSprites();
   const itemIconsRef = useItemIcons();
   const {
     frameIndexRef,
@@ -137,38 +140,17 @@ function ScreenGame({
       ctx.scale(ZOOM, ZOOM);
 
       // 1 MAPA
-      renderMap(
-        ctx,
-        activeMap.tiles,
-        camX,
-        camY,
-        SCREEN_W,
-        SCREEN_H,
-        tileTexturesRef.current,
-      );
+      renderMap(ctx, activeMap.tiles, camX, camY, SCREEN_W, SCREEN_H, tileTexturesRef.current);
 
       // 1.2 PRÉDIOS — sprite único desenhado por cima do mosaico de tile
       // (a colisão real já vem do grid, isso é só visual)
-      renderBuildings(
-        ctx,
-        activeMap.buildings,
-        camX,
-        camY,
-        SCREEN_W,
-        SCREEN_H,
-        buildingSpritesRef.current,
-      );
+      renderBuildings(ctx, activeMap.buildings, camX, camY, SCREEN_W, SCREEN_H, buildingSpritesRef.current);
 
       // 1.5 ITENS NO CHÃO — desenhados sobre o mapa, mas sob os inimigos/player
-      renderPickups(
-        ctx,
-        pickupsRef.current,
-        camX,
-        camY,
-        SCREEN_W,
-        SCREEN_H,
-        itemIconsRef.current,
-      );
+      renderPickups(ctx, pickupsRef.current, camX, camY, SCREEN_W, SCREEN_H, itemIconsRef.current);
+
+      // 1.7 NPCs — parados, sem combate/animação
+      renderNpcs(ctx, activeMap.npcs, camX, camY, SCREEN_W, SCREEN_H, npcSpritesRef.current);
 
       // 2 INIMIGOS
       renderEnemies(
@@ -199,14 +181,7 @@ function ScreenGame({
       );
 
       // NÚMEROS DE DANO FLUTUANTES
-      renderDamageNumbers(
-        ctx,
-        damageNumbersRef.current,
-        camX,
-        camY,
-        viewW,
-        viewH,
-      );
+      renderDamageNumbers(ctx, damageNumbersRef.current, camX, camY, viewW, viewH);
 
       if (DEBUG_HITBOX && attack.active) {
         renderDebugHitbox(ctx, pos, attack, camX, camY);
@@ -215,14 +190,7 @@ function ScreenGame({
       ctx.restore(); // remove zoom — daqui pra baixo é pixel de tela real
 
       // 4 HUD
-      renderHud(
-        ctx,
-        hud.hp,
-        hud.hpMax,
-        hud.score,
-        SCREEN_W,
-        formatGameTime(computeGameTime(totalPlayedMsRef.current)),
-      );
+      renderHud(ctx, hud.hp, hud.hpMax, hud.score, SCREEN_W, formatGameTime(computeGameTime(totalPlayedMsRef.current)));
 
       // TELA DE MORTE
       if (gameState === "dead") {
@@ -247,12 +215,7 @@ function ScreenGame({
 
       const btn = getRespawnButtonRect(SCREEN_W, SCREEN_H);
 
-      if (
-        cx >= btn.x &&
-        cx <= btn.x + btn.w &&
-        cy >= btn.y &&
-        cy <= btn.y + btn.h
-      ) {
+      if (cx >= btn.x && cx <= btn.x + btn.w && cy >= btn.y && cy <= btn.y + btn.h) {
         onRespawn();
       }
     };
@@ -284,6 +247,7 @@ function ScreenGame({
     flashCtxRef,
     tileTexturesRef,
     buildingSpritesRef,
+    npcSpritesRef,
     itemIconsRef,
     frameIndexRef,
     attackFrameIndexRef,
