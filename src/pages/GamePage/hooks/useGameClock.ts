@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { TIME_SCALE } from "../../../entities/time/gameTime";
 
-// Acumula tempo REAL jogado (1h de jogo = 1h real) — só soma enquanto a
-// aba está VISÍVEL, e só existe enquanto o GamePage está montado (sair
-// da tela = desmontar = parar de contar). Não usa o `dt` normalizado do
-// resto do jogo (que representa "quadros de 60fps", não milissegundos
-// reais) — aqui precisão de relógio de parede importa mais que
-// suavidade visual, e não precisa rodar no loop de 60fps pra isso.
+// Acumula tempo de JOGO (não real) — 24h de jogo em 6h reais (ver
+// TIME_SCALE em entities/time/gameTime.ts). Só soma enquanto a aba está
+// VISÍVEL, e só existe enquanto o GamePage está montado (sair da tela =
+// desmontar = parar de contar). Não usa o `dt` normalizado do resto do
+// jogo (que representa "quadros de 60fps", não milissegundos reais) —
+// aqui precisão de relógio de parede importa mais que suavidade visual,
+// e não precisa rodar no loop de 60fps pra isso.
 export function useGameClock(initialMs: number) {
   const [totalPlayedMs, setTotalPlayedMs] = useState(initialMs);
 
@@ -21,7 +23,7 @@ export function useGameClock(initialMs: number) {
 
       const now = performance.now();
       if (lastTickRef.current !== null) {
-        totalRef.current += now - lastTickRef.current;
+        totalRef.current += (now - lastTickRef.current) * TIME_SCALE;
         setTotalPlayedMs(totalRef.current);
       }
       lastTickRef.current = now;
