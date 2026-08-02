@@ -23,6 +23,7 @@ export const FORJA: MapDefinition = {
 
   buildings: [],
   npcs: [],
+  resourceNodes: [],
   portals: [
     // Porta de saída — devolve exatamente na frente da porta da Forja na cidade
     { tx: 3, ty: 5, targetMapId: "cidade", targetTx: 15, targetTy: 6 },

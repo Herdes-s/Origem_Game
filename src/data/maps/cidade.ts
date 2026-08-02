@@ -43,6 +43,7 @@ export const CIDADE: MapDefinition = {
   ],
 
   npcs: [],
+  resourceNodes: [],
 
   portals: [
     // Saída norte, de volta pra floresta

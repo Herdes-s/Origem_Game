@@ -1,6 +1,7 @@
 import type { TileMap } from "../../types/game";
 import type { LevelRange } from "../../entities/enemies/enemyLeveling";
 import type { NpcConfig } from "../../entities/npc/npcTypes";
+import type { ResourceNodeConfig } from "../../entities/items/world/resourceNode";
 
 export type EnemyRace = "slime" | "goblin";
 
@@ -59,4 +60,5 @@ export type MapDefinition = {
   portals: Portal[];
   buildings: BuildingConfig[];
   npcs: NpcConfig[];
+  resourceNodes: ResourceNodeConfig[];
 };

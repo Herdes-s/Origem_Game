@@ -12,15 +12,28 @@ import { updatePlayerMovement } from "../../../entities/player/playerMovement";
 import { updateEnemies } from "../../../entities/enemies/enemyAI";
 import type { PlayerAttributes } from "../../../entities/player/playerAttributes";
 import { computeDerivedStats } from "../../../entities/player/playerAttributes";
-import { updateSpawnDens, type SpawnDen } from "../../../entities/enemies/spawnDen";
+import {
+  updateSpawnDens,
+  type SpawnDen,
+} from "../../../entities/enemies/spawnDen";
 import { playPlayerDeath } from "../../../entities/audio/soundEngine";
 import { getCurrentMap, type Portal } from "../../../data/maps";
 import { TILE_SIZE } from "../../../data/map";
 import { computeDeltaScale } from "../../../entities/combat/deltaTime";
-import { computeCarryCapacity, computeKnockbackMultiplier } from "../../../entities/items/weight";
-import { findNearestPickup, type ItemPickup } from "../../../entities/items/world/itemPickup";
+import {
+  computeCarryCapacity,
+  computeKnockbackMultiplier,
+} from "../../../entities/items/weight";
+import {
+  findNearestPickup,
+  type ItemPickup,
+} from "../../../entities/items/world/itemPickup";
 import { findNearestNpc } from "../../../entities/npc/npcInteraction";
 import type { NpcConfig } from "../../../data/maps";
+import {
+  findNearestAvailableNode,
+  type ResourceNodeState,
+} from "../../../entities/items/world/resourceNode";
 
 const PORTAL_COOLDOWN_FRAMES = 30; // ~0.5s — evita re-teleportar no mesmo frame/instante
 
@@ -36,11 +49,14 @@ type Args = {
   attributesRef: React.RefObject<PlayerAttributes>;
   densRef: React.RefObject<SpawnDen[]>;
   pickupsRef: React.RefObject<ItemPickup[]>;
+  resourceNodesRef: React.RefObject<ResourceNodeState[]>;
+  totalPlayedMsRef: React.RefObject<number>;
   onXpGained: (amount: number) => void;
   onPortalEnter: (portal: Portal) => void;
   onPlayerDeath: () => void;
   onNearbyPickupChange: (pickupId: number | null) => void;
   onNearNpcChange: (npc: NpcConfig | null) => void;
+  onNearNodeChange: (node: ResourceNodeState | null) => void;
 };
 
 // Loop principal de atualização (não é o de desenho, esse fica no
@@ -59,11 +75,14 @@ export function useGameLoop({
   attributesRef,
   densRef,
   pickupsRef,
+  resourceNodesRef,
+  totalPlayedMsRef,
   onXpGained,
   onPortalEnter,
   onPlayerDeath,
   onNearbyPickupChange,
   onNearNpcChange,
+  onNearNodeChange,
 }: Args) {
   const rafRef = useRef<number>(0);
   const portalCooldownRef = useRef(0);
@@ -73,6 +92,7 @@ export function useGameLoop({
   // 60fps só pra mostrar/esconder o botão "Coletar".
   const lastNearbyPickupIdRef = useRef<number | null>(null);
   const lastNearNpcIdRef = useRef<string | null>(null);
+  const lastNearNodeIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const loop = (timestamp: number) => {
@@ -90,7 +110,9 @@ export function useGameLoop({
         // Multiplicador de peso pro knockback RECEBIDO (o DADO já vem
         // embutido em stats.knockbackForce) — mesma fórmula, reaproveitada
         // na direção contrária: carregado, é mais fácil de ser empurrado.
-        const carryCapacity = computeCarryCapacity(attributesRef.current.primary.for);
+        const carryCapacity = computeCarryCapacity(
+          attributesRef.current.primary.for,
+        );
         const weightMultiplier = computeKnockbackMultiplier(
           attributesRef.current.secondary.peso,
           carryCapacity,
@@ -128,9 +150,7 @@ export function useGameLoop({
         updateSpawnDens(densRef.current, enemiesRef.current, dt);
 
         // Remove inimigos cuja animação de morte já terminou
-        enemiesRef.current = enemiesRef.current.filter(
-          (e) => !e.deathAnimDone,
-        );
+        enemiesRef.current = enemiesRef.current.filter((e) => !e.deathAnimDone);
 
         // Remove damage numbers expirados
         damageNumbersRef.current = damageNumbersRef.current.filter(
@@ -140,7 +160,10 @@ export function useGameLoop({
         // Item largado mais próximo do player, dentro do alcance de coleta
         // — só avisa o React (pra mostrar/esconder o botão "Coletar")
         // quando o id muda, não a cada frame.
-        const nearestPickup = findNearestPickup(pickupsRef.current, posRef.current);
+        const nearestPickup = findNearestPickup(
+          pickupsRef.current,
+          posRef.current,
+        );
         const nearestId = nearestPickup?.id ?? null;
         if (nearestId !== lastNearbyPickupIdRef.current) {
           lastNearbyPickupIdRef.current = nearestId;
@@ -157,6 +180,23 @@ export function useGameLoop({
         if (nearestNpcId !== lastNearNpcIdRef.current) {
           lastNearNpcIdRef.current = nearestNpcId;
           onNearNpcChange(nearestNpc);
+        }
+
+        // Nó de recurso (pedra, macieira...) disponível mais próximo —
+        // a lista é GLOBAL (todos os mapas, não só o atual — ver
+        // resourceNode.ts), por isso passa getCurrentMapId() pra
+        // filtrar. Indisponível (já colhido, ainda recarregando) nem
+        // entra na busca.
+        const nearestNode = findNearestAvailableNode(
+          resourceNodesRef.current,
+          getCurrentMap().id,
+          posRef.current,
+          totalPlayedMsRef.current,
+        );
+        const nearestNodeId = nearestNode?.id ?? null;
+        if (nearestNodeId !== lastNearNodeIdRef.current) {
+          lastNearNodeIdRef.current = nearestNodeId;
+          onNearNodeChange(nearestNode);
         }
 
         if (portalCooldownRef.current > 0) {
@@ -202,10 +242,13 @@ export function useGameLoop({
     attributesRef,
     densRef,
     pickupsRef,
+    resourceNodesRef,
+    totalPlayedMsRef,
     onXpGained,
     onPortalEnter,
     onPlayerDeath,
     onNearbyPickupChange,
     onNearNpcChange,
+    onNearNodeChange,
   ]);
 }

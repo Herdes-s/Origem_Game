@@ -35,6 +35,7 @@ export const LOJA_POCOES: MapDefinition = {
       interactionRadius: 90,
     },
   ],
+  resourceNodes: [],
   portals: [
     // Porta de saída — devolve exatamente na frente da porta da Loja na cidade
     { tx: 3, ty: 5, targetMapId: "cidade", targetTx: 10, targetTy: 15 },

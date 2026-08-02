@@ -5,8 +5,16 @@ import { CIDADE } from "./cidade";
 import { GUILDA } from "./guilda";
 import { FORJA } from "./forja";
 import { LOJA_POCOES } from "./lojaPocoes";
+import type { ResourceNodeConfig } from "../../entities/items/world/resourceNode";
 
-export type { MapDefinition, Portal, WanderSpawnConfig, PatrolSpawnConfig, EnemyRace, BuildingConfig } from "./types";
+export type {
+  MapDefinition,
+  Portal,
+  WanderSpawnConfig,
+  PatrolSpawnConfig,
+  EnemyRace,
+  BuildingConfig,
+} from "./types";
 export type { NpcConfig, NpcRole } from "../../entities/npc/npcTypes";
 
 export const MAPS: Record<string, MapDefinition> = {
@@ -67,4 +75,33 @@ export function listNpcSprites(): string[] {
     }
   }
   return Array.from(seen);
+}
+
+// Todo spriteSrc de nó de recurso que tiver imagem própria (macieira) —
+// pedra não tem (cai no ícone do item), então não aparece aqui.
+export function listResourceNodeSprites(): string[] {
+  const seen = new Set<string>();
+  for (const map of Object.values(MAPS)) {
+    for (const node of map.resourceNodes) {
+      if (node.spriteSrc) seen.add(node.spriteSrc);
+    }
+  }
+  return Array.from(seen);
+}
+
+// TODOS os nós de recurso de TODOS os mapas, cada um já com o mapId
+// marcado — usado pra montar o estado global em GamePage (o estado de
+// cada nó precisa sobreviver a trocar de mapa, diferente de
+// inimigo/pickup, porque "recarregar em X horas de jogo" só faz sentido
+// contando o tempo mesmo enquanto o player está em outro lugar).
+export function listAllResourceNodes(): (ResourceNodeConfig & {
+  mapId: string;
+})[] {
+  const all: (ResourceNodeConfig & { mapId: string })[] = [];
+  for (const map of Object.values(MAPS)) {
+    for (const node of map.resourceNodes) {
+      all.push({ ...node, mapId: map.id });
+    }
+  }
+  return all;
 }

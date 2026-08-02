@@ -51,8 +51,12 @@ import {
   removeItem,
 } from "../../entities/items/inventory";
 import { computeCarryCapacity } from "../../entities/items/weight";
-import { createItemPickup, type ItemPickup } from "../../entities/items/world/itemPickup";
+import {
+  createItemPickup,
+  type ItemPickup,
+} from "../../entities/items/world/itemPickup";
 import type { NpcConfig } from "../../data/maps";
+import { listAllResourceNodes } from "../../data/maps";
 import { RECIPES } from "../../entities/items/crafting/recipes";
 import { craftItem } from "../../entities/items/crafting/craftItem";
 
@@ -60,6 +64,11 @@ import { useKeyboardControls } from "./hooks/useKeyboardControls";
 import { useGameLoop } from "./hooks/useGameLoop";
 import { useGameClock } from "./hooks/useGameClock";
 import styles from "./GamePage.module.scss";
+import {
+  isNodeAvailable,
+  rollHarvestQuantity,
+  type ResourceNodeState,
+} from "../../entities/items/world/resourceNode";
 
 const AUTOSAVE_INTERVAL_MS = 5000;
 
@@ -148,6 +157,15 @@ function GamePage() {
   // carregamento (ver entities/items/world/itemPickup.ts).
   const pickupsRef = useRef<ItemPickup[]>([]);
 
+  // Nós de recurso (pedra, macieira...) — GLOBAL, todos os mapas de uma
+  // vez, inicializado uma única vez aqui e NUNCA resetado ao trocar de
+  // mapa (diferente de enemiesRef/pickupsRef). Precisa ser assim porque
+  // "recarrega em X horas de jogo" só funciona se o estado sobreviver
+  // enquanto o player está em outro lugar — ver entities/items/world/resourceNode.ts.
+  const resourceNodesRef = useRef<ResourceNodeState[]>(
+    listAllResourceNodes().map((node) => ({ ...node, depletedAtGameMs: null })),
+  );
+
   // Só existe pra mostrar/esconder o botão "Coletar" — o game loop
   // (useGameLoop) já faz a detecção de proximidade a 60fps em refs, e só
   // chama isso quando o id realmente muda (ver onNearbyPickupChange).
@@ -155,16 +173,23 @@ function GamePage() {
   // Qual painel grande está aberto agora — só um por vez (StatusPanel e
   // InventoryPanel são modais controlados daqui, não mais donos do
   // próprio "open"; quem decide é o GameMenu, através disso).
-  const [activePanel, setActivePanel] = useState<"inventory" | "status" | null>(null);
+  const [activePanel, setActivePanel] = useState<"inventory" | "status" | null>(
+    null,
+  );
   // NPC mais próxima agora (ou null) — mesmo padrão do nearbyPickupId,
   // só que quem ouve decide o que abrir de acordo com o `role` dela.
   const [nearbyNpc, setNearbyNpc] = useState<NpcConfig | null>(null);
+  // Nó de recurso disponível mais próximo agora (ou null) — mesmo padrão.
+  const [nearbyNode, setNearbyNode] = useState<ResourceNodeState | null>(null);
   const [craftPanelOpen, setCraftPanelOpen] = useState(false);
   const handleNearbyPickupChange = useCallback((id: number | null) => {
     setNearbyPickupId(id);
   }, []);
   const handleNearNpcChange = useCallback((npc: NpcConfig | null) => {
     setNearbyNpc(npc);
+  }, []);
+  const handleNearNodeChange = useCallback((node: ResourceNodeState | null) => {
+    setNearbyNode(node);
   }, []);
 
   const attackRef = useRef<AttackState>({
@@ -204,38 +229,45 @@ function GamePage() {
   // interval configurado uma vez só no mount). useCallback com deps
   // vazias é seguro aqui porque só lê `.current` de refs — nunca captura
   // state direto, então a identidade nunca precisa mudar.
-  const buildSnapshot = useCallback(() => ({
-    attributes: attributesRef.current,
-    progress: progressRef.current,
-    position: posRef.current,
-    hp: hudRef.current.hp,
-    score: hudRef.current.score,
-    mapId: getCurrentMapId(),
-    inventory: inventoryRef.current,
-    totalPlayedMs: totalPlayedMsRef.current,
-  }), [totalPlayedMsRef]);
+  const buildSnapshot = useCallback(
+    () => ({
+      attributes: attributesRef.current,
+      progress: progressRef.current,
+      position: posRef.current,
+      hp: hudRef.current.hp,
+      score: hudRef.current.score,
+      mapId: getCurrentMapId(),
+      inventory: inventoryRef.current,
+      totalPlayedMs: totalPlayedMsRef.current,
+    }),
+    [totalPlayedMsRef],
+  );
 
   // Player pisou num portal — troca de mapa, reposiciona, e gera os
   // inimigos/covis do mapa novo. Atributos/progresso não mudam (mesmo
   // princípio do respawn: level e atributos são do PLAYER, não do mapa).
-  const handlePortalEnter = useCallback((portal: Portal) => {
-    setCurrentMapId(portal.targetMapId);
-    // Craft não abre mais sozinho ao entrar na sala — quem abre agora é
-    // ficar perto da NPC (handleNearNpcChange). Trocar de mapa sempre
-    // fecha (contexto de loja não faz sentido fora dela), e limpa
-    // proximidade de pickup/NPC do mapa anterior (não existem mais aqui).
-    setCraftPanelOpen(false);
-    setNearbyNpc(null);
-    setNearbyPickupId(null);
-    posRef.current = {
-      x: portal.targetTx * TILE_SIZE + TILE_SIZE / 2,
-      y: portal.targetTy * TILE_SIZE + TILE_SIZE / 2,
-    };
-    enemiesRef.current = spawnEnemies();
-    densRef.current = spawnDensFromMap();
-    pickupsRef.current = [];
-    saveGame(buildSnapshot());
-  }, [buildSnapshot]);
+  const handlePortalEnter = useCallback(
+    (portal: Portal) => {
+      setCurrentMapId(portal.targetMapId);
+      // Craft não abre mais sozinho ao entrar na sala — quem abre agora é
+      // ficar perto da NPC (handleNearNpcChange). Trocar de mapa sempre
+      // fecha (contexto de loja não faz sentido fora dela), e limpa
+      // proximidade de pickup/NPC do mapa anterior (não existem mais aqui).
+      setCraftPanelOpen(false);
+      setNearbyNpc(null);
+      setNearbyPickupId(null);
+      setNearbyNode(null); // só limpa o state de proximidade — resourceNodesRef.current continua intacto (é global, ver comentário na declaração)
+      posRef.current = {
+        x: portal.targetTx * TILE_SIZE + TILE_SIZE / 2,
+        y: portal.targetTy * TILE_SIZE + TILE_SIZE / 2,
+      };
+      enemiesRef.current = spawnEnemies();
+      densRef.current = spawnDensFromMap();
+      pickupsRef.current = [];
+      saveGame(buildSnapshot());
+    },
+    [buildSnapshot],
+  );
 
   const handlePlayerDeath = useCallback(() => {
     const result = applyDeathPenalty(
@@ -258,11 +290,14 @@ function GamePage() {
     attributesRef,
     densRef,
     pickupsRef,
+    resourceNodesRef,
+    totalPlayedMsRef,
     onXpGained: handleXpGained,
     onPortalEnter: handlePortalEnter,
     onPlayerDeath: handlePlayerDeath,
     onNearbyPickupChange: handleNearbyPickupChange,
     onNearNpcChange: handleNearNpcChange,
+    onNearNodeChange: handleNearNodeChange,
   });
 
   // Salva na hora quando atributos ou progresso mudam (level up, ponto
@@ -313,14 +348,23 @@ function GamePage() {
   const handleAddTestItem = (itemId: string) => {
     const capacity = computeCarryCapacity(attributesRef.current.primary.for);
     const currentWeight = attributesRef.current.secondary.peso;
-    const result = addItem(inventoryRef.current, itemId, 1, currentWeight, capacity);
+    const result = addItem(
+      inventoryRef.current,
+      itemId,
+      1,
+      currentWeight,
+      capacity,
+    );
 
     if (result.added <= 0) return;
 
     setInventory(result.inventory);
     setAttributes((prev) => ({
       ...prev,
-      secondary: { ...prev.secondary, peso: computeInventoryWeight(result.inventory) },
+      secondary: {
+        ...prev.secondary,
+        peso: computeInventoryWeight(result.inventory),
+      },
     }));
   };
 
@@ -334,14 +378,23 @@ function GamePage() {
 
     const capacity = computeCarryCapacity(attributesRef.current.primary.for);
     const currentWeight = attributesRef.current.secondary.peso;
-    const result = addItem(inventoryRef.current, pickup.itemId, pickup.quantity, currentWeight, capacity);
+    const result = addItem(
+      inventoryRef.current,
+      pickup.itemId,
+      pickup.quantity,
+      currentWeight,
+      capacity,
+    );
 
     if (result.added <= 0) return; // nada coube, não faz nada (nem remove o pickup)
 
     setInventory(result.inventory);
     setAttributes((prev) => ({
       ...prev,
-      secondary: { ...prev.secondary, peso: computeInventoryWeight(result.inventory) },
+      secondary: {
+        ...prev.secondary,
+        peso: computeInventoryWeight(result.inventory),
+      },
     }));
 
     if (result.added >= pickup.quantity) {
@@ -352,6 +405,40 @@ function GamePage() {
       // coube só uma parte — o resto continua largado ali
       pickup.quantity -= result.added;
     }
+  };
+
+  // Colher um nó de recurso (pedra, macieira...) — sorteia a quantidade
+  // dentro do range da config, tenta encaixar no inventário, e SÓ marca
+  // como colhido (depletedAtGameMs) se pelo menos algo coube — se o
+  // inventário está cheio, o nó continua disponível pra tentar depois.
+  const handleHarvestNode = () => {
+    const node = resourceNodesRef.current.find((n) => n.id === nearbyNode?.id);
+    if (!node || !isNodeAvailable(node, totalPlayedMsRef.current)) return;
+
+    const quantity = rollHarvestQuantity(node);
+    const capacity = computeCarryCapacity(attributesRef.current.primary.for);
+    const currentWeight = attributesRef.current.secondary.peso;
+    const result = addItem(
+      inventoryRef.current,
+      node.itemId,
+      quantity,
+      currentWeight,
+      capacity,
+    );
+
+    if (result.added <= 0) return; // inventário sem espaço — nó continua disponível
+
+    setInventory(result.inventory);
+    setAttributes((prev) => ({
+      ...prev,
+      secondary: {
+        ...prev.secondary,
+        peso: computeInventoryWeight(result.inventory),
+      },
+    }));
+
+    node.depletedAtGameMs = totalPlayedMsRef.current;
+    setNearbyNode(null);
   };
 
   // Reorganizar slots dentro do inventário (arrastar) — nunca muda o peso
@@ -375,7 +462,10 @@ function GamePage() {
     setInventory(result.inventory);
     setAttributes((prev) => ({
       ...prev,
-      secondary: { ...prev.secondary, peso: computeInventoryWeight(result.inventory) },
+      secondary: {
+        ...prev.secondary,
+        peso: computeInventoryWeight(result.inventory),
+      },
     }));
   };
 
@@ -391,14 +481,20 @@ function GamePage() {
 
     if (def.effect.type === "heal") {
       const hpMax = computeDerivedStats(attributesRef.current).hpMax;
-      hudRef.current.hp = Math.min(hpMax, hudRef.current.hp + def.effect.amount);
+      hudRef.current.hp = Math.min(
+        hpMax,
+        hudRef.current.hp + def.effect.amount,
+      );
     }
 
     const nextInventory = removeItem(inventoryRef.current, slotIndex, 1);
     setInventory(nextInventory);
     setAttributes((prev) => ({
       ...prev,
-      secondary: { ...prev.secondary, peso: computeInventoryWeight(nextInventory) },
+      secondary: {
+        ...prev.secondary,
+        peso: computeInventoryWeight(nextInventory),
+      },
     }));
   };
 
@@ -410,15 +506,24 @@ function GamePage() {
     const slot = inventoryRef.current[slotIndex];
     if (!slot) return;
 
-    const nextInventory = removeItem(inventoryRef.current, slotIndex, slot.quantity);
+    const nextInventory = removeItem(
+      inventoryRef.current,
+      slotIndex,
+      slot.quantity,
+    );
 
     setInventory(nextInventory);
     setAttributes((prev) => ({
       ...prev,
-      secondary: { ...prev.secondary, peso: computeInventoryWeight(nextInventory) },
+      secondary: {
+        ...prev.secondary,
+        peso: computeInventoryWeight(nextInventory),
+      },
     }));
 
-    pickupsRef.current.push(createItemPickup(slot.itemId, slot.quantity, posRef.current));
+    pickupsRef.current.push(
+      createItemPickup(slot.itemId, slot.quantity, posRef.current),
+    );
   };
 
   const handleRespawn = () => {
@@ -456,14 +561,27 @@ function GamePage() {
         gameStateRef={gameStateRef}
         damageNumbersRef={damageNumbersRef}
         totalPlayedMsRef={totalPlayedMsRef}
+        resourceNodesRef={resourceNodesRef}
         onRespawn={handleRespawn}
       />
       <ControlGame keysRef={keysRef} />
-      {nearbyPickupId !== null && (
-        <button className={styles.collect_button} onClick={handleCollectPickup} type="button">
+      {nearbyPickupId !== null ? (
+        <button
+          className={styles.collect_button}
+          onClick={handleCollectPickup}
+          type="button"
+        >
           ✋ Coletar
         </button>
-      )}
+      ) : nearbyNode !== null ? (
+        <button
+          className={styles.collect_button}
+          onClick={handleHarvestNode}
+          type="button"
+        >
+          🌾 Colher
+        </button>
+      ) : null}
 
       <GameMenu
         inventoryLabel={`Inventário (${inventory.filter((s) => s !== null).length}/${inventory.length})`}

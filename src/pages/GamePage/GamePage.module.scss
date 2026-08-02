@@ -71,8 +71,8 @@
 
   @media (pointer: coarse) and (max-width: 767px),
          (pointer: coarse) and (max-height: 767px) {
-    left: 2rem;
-    right: auto;
+    left: auto;
+    right: 2rem;
     margin: 0;
     bottom: 150px;
   }
