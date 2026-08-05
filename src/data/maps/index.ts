@@ -1,21 +1,15 @@
 import type { MapDefinition } from "./types";
+import type { ResourceNodeConfig } from "../../entities/items/world/resourceNode";
 import { CAVERNA } from "./caverna";
 import { FLORESTA } from "./floresta";
 import { CIDADE } from "./cidade";
 import { GUILDA } from "./guilda";
 import { FORJA } from "./forja";
 import { LOJA_POCOES } from "./lojaPocoes";
-import type { ResourceNodeConfig } from "../../entities/items/world/resourceNode";
 
-export type {
-  MapDefinition,
-  Portal,
-  WanderSpawnConfig,
-  PatrolSpawnConfig,
-  EnemyRace,
-  BuildingConfig,
-} from "./types";
+export type { MapDefinition, Portal, WanderSpawnConfig, PatrolSpawnConfig, EnemyRace, BuildingConfig } from "./types";
 export type { NpcConfig, NpcRole } from "../../entities/npc/npcTypes";
+export type { ResourceNodeConfig, ResourceNodeState } from "../../entities/items/world/resourceNode";
 
 export const MAPS: Record<string, MapDefinition> = {
   caverna: CAVERNA,
@@ -84,6 +78,7 @@ export function listResourceNodeSprites(): string[] {
   for (const map of Object.values(MAPS)) {
     for (const node of map.resourceNodes) {
       if (node.spriteSrc) seen.add(node.spriteSrc);
+      if (node.spriteSrcDepleted) seen.add(node.spriteSrcDepleted);
     }
   }
   return Array.from(seen);
@@ -94,9 +89,7 @@ export function listResourceNodeSprites(): string[] {
 // cada nó precisa sobreviver a trocar de mapa, diferente de
 // inimigo/pickup, porque "recarregar em X horas de jogo" só faz sentido
 // contando o tempo mesmo enquanto o player está em outro lugar).
-export function listAllResourceNodes(): (ResourceNodeConfig & {
-  mapId: string;
-})[] {
+export function listAllResourceNodes(): (ResourceNodeConfig & { mapId: string })[] {
   const all: (ResourceNodeConfig & { mapId: string })[] = [];
   for (const map of Object.values(MAPS)) {
     for (const node of map.resourceNodes) {

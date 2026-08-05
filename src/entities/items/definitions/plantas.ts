@@ -16,6 +16,7 @@ export const PLANTAS: Record<string, ItemDefinition> = {
     weight: 0.3,
     maxStack: 20,
     color: "#dc2626",
+    iconSrc: "/assets/items/maca.png",  
     description: "Fruta colhida de macieiras. Alimento simples — nenhum efeito ainda.",
   },
 };

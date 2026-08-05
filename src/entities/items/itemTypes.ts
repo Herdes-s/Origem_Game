@@ -10,7 +10,8 @@ export type ItemCategory =
   | "material"
   | "minerio"
   | "planta"
-  | "pocao";
+  | "pocao"
+  | "ferramenta";
 
 // O que acontece ao CONSUMIR o item (botão "Usar" no inventário). Só
 // itens com esse campo preenchido mostram o botão — union type porque
