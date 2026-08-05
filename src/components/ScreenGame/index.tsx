@@ -164,6 +164,7 @@ function ScreenGame({
         SCREEN_H,
         totalPlayedMsRef.current,
         resourceNodeSpritesRef.current,
+        itemIconsRef.current,
       );
 
       // 1.5 ITENS NO CHÃO — desenhados sobre o mapa, mas sob os inimigos/player
